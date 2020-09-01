@@ -1,0 +1,163 @@
+---
+title: "scfindME package vignette"
+author: "Yuyao Song"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{scfindME package vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+Large single cell RNA-seq datasets had been generating rapidly. In a large single cell atlas, the complete transcriptome sequence are obtained for individual cells. In addition to gene expression levels, alternative splicing events are able to be quantified and represented at single cell resolution.
+
+To facilitate the interpretation of cell type and alternative splicing patterns for users from all disciplines, a search tool scfindME had been developed. 
+
+## searching
+Indexing and searching mechanism of scfindME is built on top of `scfind`. Information about scfind could be find in https://github.com/hemberg-lab/scfind, a manuscript describing `scfind` in details is available in [bioRxiv_scfind](https://doi.org/10.1101/788596).
+
+## alternative splicing quantification
+Single cell alternative splicing event quantification is based on a workflow `MicroExonator`, especially in the integrated method `Whippet`. Information about `MicroExonator` could be find in https://github.com/hemberg-lab/MicroExonator, a manuscript describing `MicroExonator` in details is available in [bioRxiv_MicroExonator](https://doi.org/10.1101/2020.02.12.945683). Information about `Whippet` could be find in https://github.com/timbitz/Whippet.jl.
+
+## processed data examples in `scfindME`
+In `scfindME` we provide 2 sample datasets for illustrative purposes:
+
+* Mouse glutamatergic and GABA-ergic neurons from Allan Brain Atlas([Tasic et al., 2016](https://www.nature.com/articles/nn.4216)).
+* Mouse complete tissue cell atlas Tabula Muris(FACS) i.e. TM_FACS ([The Tabula Muris Consortium](https://doi.org/10.1038/s41586-018-0590-4)) 
+
+----------
+
+# Start up
+
+## starting matreial
+
+If you would like to process your own single cell RNA-seq dataset, please run Whippet Quantification analysis using the MicroExonator workflow. You need a UNIX machine and possibly a high-performance computer cluster for large datasets. Please refer to the "single cell" chapter in MicroExonator documentation for detailed user guide.
+    * You will need fastq files for raw input, either local or a list of SRA ids.
+    * You also need a metadata file, which must contain a column of individual cell fastq file identifier, usually named "SRA" if you use SRA ids e.g. "SRR2138604". This column should also correspond to your `Whippet` .psi.gz file names e.g. "SRR2138604.psi.gz". The metadata also need a column indicating the cell type e.g. "primary_type".
+
+If you would like to explore our example datasets, please continue to the installation chapter of scfindME.
+
+## installation
+To install scfindME use the following codes in R:
+```{r eval=FALSE}
+install.packages("devtools")
+devtools::install_github("YY-SONG0718/scfindME")
+```
+
+```{r}
+library(scfindME)
+```
+Note that you are not recommended to load `scfind` and `scfindME` libraries simutaneously since functions will collide.
+
+To clone scfindME source codes to your local R run the following codes in terminal:
+```{r eval=FALSE}
+git clone https://github.com/YY-SONG0718/scfindME.git
+```
+
+## prepare your own index
+### scfindME input matrix building - for users with their own scRNA-seq data
+```{r eval=FALSE}
+# If you finished running your own single cell RNA-seq Whippet analysis, build original matrix and read count matrix as follows:
+matrix.original <- buildMatrix.original("directory_to_Whippet_.psi.gz_files", metadata, column_label = "SRA")
+
+read.count <- buildMatrix.read.count("directory_to_Whippet_.psi.gz_files", metadata, column_label = "SRA")
+```
+
+
+### input matrix scailing for building index
+
+```{r eval=FALSE}
+# Either use scaled.above matrix or scaled below matrix to build an index
+scaled.above <- buildMatrix.scaled.above(matrix.original)
+
+scaled.below <_ buildMatrix.scaled.below(matrix.original)
+
+```
+
+
+### additional elements to be stored in index
+```{r eval=FALSE}
+# Build the statistics matrix and node_list matrix to store in index metadata
+
+stats <- buildMatrix.stats(matrix.original, scaled.above)
+
+node.list <- buildMatrix.node_list(dir, scaled.above)
+
+```
+
+### scfindME index building
+
+```{r eval=FALSE}
+# With the above elements, start building your own index
+# For example you use the above matrix to build the index
+index <- buildAltSpliceIndex(scaled.above, metadata, "dataset_name", "primary_type", qb = 2)
+
+index <- addIndexMeta(index, "above", read.count, stats, node.list)
+
+```
+
+## explore example index
+```{r}
+# here we use the above index of glutamatergic neurons in Tasic et al. 2016 as example
+index.above.glu <- loadObject("~/scfindME/data/index.above.glu.z.rds")
+```
+
+------------
+
+# Search 
+In scfindME you can use all searching functions that exists in [`scfind` package vignette](http://www.bioconductor.org/packages/release/bioc/vignettes/scfind/inst/doc/scfind.html), here we show some additional functions provided by scfindME and some modifications.
+
+## search for nodes of a gene in interest
+In scfindME we filter alternative splicing nodes to ensure reliable PSI values. Thus it is useful to usethe following function to search for an encoded node list of a specific gene in an index.
+```{r}
+# lets observe two neuron cell specific genes
+gn <- geneNodes(index.above.glu, c("Snap25", "Gria2"), "gene_name")
+gn
+```
+
+
+## search for node details
+If you have a list of interested nodes, to find node details use the following funtion.
+```{r}
+nd <- nodeDetails(index.above.glu, c("ENSMUSG00000033981.14_29", "ENSMUSG00000027273.13_14"))
+nd
+```
+
+## search for cell type with a node list
+In an scfindME index with metadata, please use `hyperQueryCellTypesAS` to search for enriched cell types using a node list.
+```{r}
+# observe the flip-flop exon in Gria2 gene
+rs <- hyperQueryCellTypesAS(index.above.glu, node.list = c("ENSMUSG00000033981.14_28"))
+# this node serves as best marker for L4 Scnn1a cell type
+
+barplot(-log10(rs$pval), ylab = "-log10(pval)", las = 2, names.arg = rs$cell_type)
+
+rs2 <- hyperQueryCellTypesAS(index.above.glu, node.list = c("ENSMUSG00000033981.14_29"))
+
+# the other node serves as good marker except for L4 and L5a neurons
+barplot(-log10(rs2$pval+0.00001), ylab = "-log10(pval)", las = 2, names.arg = rs2$cell_type)
+
+```
+
+## search for cell type with a gene
+Since there are multiple alternative splicing nodes within a gene, it is useful to find a conbination of nodes that serves as a specific marker of a cell type. The follwing function integrates `geneNodes`, `markerGenes` and `hyperQueryCellTypes` to find an optimized node set. Note that this function is relatively strict so needs improvements.
+```{r}
+ns <- findNodeSets(index.above.glu, c("Madd"), "gene_name")
+ns
+```
+
+
+### sessionInfo()
+```{r}
+sessionInfo()
+```
+
+

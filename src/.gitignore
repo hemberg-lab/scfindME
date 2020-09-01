@@ -1,0 +1,4 @@
+*.o
+*.so
+*.dll
+.ipynb_checkpoints

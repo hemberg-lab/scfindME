@@ -20,6 +20,7 @@ Collate:
     'AllGenerics.R'
     'CoreFunctions.R'
     'CoreMethods.R'
+    'Tasic_2016.R'
     'buildMatrix.R'
     'zzz.R'
 Suggests: 

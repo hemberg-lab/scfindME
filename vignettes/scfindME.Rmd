@@ -47,7 +47,7 @@ If you would like to explore our example datasets, please continue to the instal
 
 ## installation
 To install scfindME use the following codes in R:
-```{r eval=FALSE}
+```{r }
 install.packages("devtools")
 devtools::install_github("YY-SONG0718/scfindME")
 ```
@@ -107,7 +107,8 @@ index <- addIndexMeta(index, "above", read.count, stats, node.list)
 ## explore example index
 ```{r}
 # here we use the above index of glutamatergic neurons in Tasic et al. 2016 as example
-index.above.glu <- loadObject("~/scfindME/data/index.above.glu.z.rds")
+data("Tasic_2016")
+index.above.glu <- loadObject(file = url(Tasic_2016["Glu_above"]))
 ```
 
 ------------

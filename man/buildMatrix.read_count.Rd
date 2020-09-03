@@ -5,12 +5,14 @@
 \title{Builds a read_count \code{matrix} from a given Whippet Quant .psi.gz files containing directory and a metadata 
 The read_count matrix would be stored in the alternative splicing index metadata slot}
 \usage{
-buildMatrix.read_count(dir, metadata)
+buildMatrix.read_count(dir, metadata, column_label)
 }
 \arguments{
 \item{dir}{a directory containing .psi.gz files from Whippet quantification}
 
 \item{metadata}{metadata of the alternative splicing dataset, must include a column named SRA and has SRA ids for all Whippet quantified samples}
+
+\item{column_label}{the column name which indicates cell id and .pai.gz file name in metadata, usually use "SRA" and use SRA ids}
 }
 \value{
 a matrix object(read count)

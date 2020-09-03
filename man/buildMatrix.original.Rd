@@ -4,12 +4,14 @@
 \alias{buildMatrix.original}
 \title{Builds an original \code{matrix} from a given Whippet Quant .psi.gz files containing directory and a metadata}
 \usage{
-buildMatrix.original(dir, metadata)
+buildMatrix.original(dir, metadata, column_label)
 }
 \arguments{
 \item{dir}{a directory containing .psi.gz files from Whippet quantification, looks like "/lustre/scratch117/cellgen/team218/ys6/TM_FACS/MicroExonator/Whippet/Quant/Single_Cell/Unpooled/"}
 
 \item{metadata}{metadata of the alternative splicing dataset, must include a column named "SRA" and has SRA ids for all Whippet quantified samples}
+
+\item{column_label}{the column name which indicates cell id and .pai.gz file name in metadata, usually use "SRA" and use SRA ids}
 }
 \value{
 a matrix object(original)

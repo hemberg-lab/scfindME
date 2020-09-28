@@ -133,7 +133,7 @@ buildMatrix.read_count <- function(dir, metadata, column_label){
   # create @metadata$read_count
   # make the read.count matrix sparse matrix 
   read.count$mean_count <- rowMeans(read.count, na.rm = TRUE)
-  
+  read.count <- read.count[order(read.count$mean_count), ]
   read.count[which(is.na(read.count))] <- 0
   
   
@@ -242,6 +242,7 @@ buildMatrix.stats <- function(matrix.original, matrix.scaled){
 #' @return a matrix object(node_list)
 #' 
 #' @importFrom biomaRt useMart useDataset getBM
+#' @importFrom utils read.table
 #' 
 buildMatrix.node_list <- function(dir, matrix.scaled){
   url <- paste(as.character(dir), as.character(colnames(matrix.scaled)[1]), ".psi.gz", sep = "")

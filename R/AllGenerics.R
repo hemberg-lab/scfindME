@@ -24,7 +24,7 @@ setGeneric(name = "buildAltSpliceIndex",
 #'
 #' @export
 setGeneric(name = "addIndexMeta",
-           def = function(object, type, read_count, stats, node_list)
+           def = function(object, type, read.count, stats, node_list)
            {
              standardGeneric("addIndexMeta")
            })

@@ -89,7 +89,7 @@ setMethod("buildAltSpliceIndex",
 #'
 #' @param object an SCFind class object built by the method "builtAltSpliceIndex"
 #' @param type a character to indicate the type and node contents of the index
-#' @param read_count the read count matrix built by the function "buildMatrix.read_count"
+#' @param read.count the read count matrix built by the function "buildMatrix.read_count"
 #' @param stats the statistics matrix built by the function "buildMatrix.stats"
 #' @param node_list the node information matrix built by the function "buildMatrix.node_list"
 #'
@@ -99,7 +99,7 @@ setMethod("buildAltSpliceIndex",
 #' @useDynLib scfindME
 #' 
 
-addIndexMeta.classic <- function(object, type, read_count, stats, node_list){
+addIndexMeta.classic <- function(object, type, read.count, stats, node_list){
   object@metadata$type <- type
   object@metadata$read_count <- read.count
   object@metadata$stats <- stats

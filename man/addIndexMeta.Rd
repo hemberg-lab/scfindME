@@ -6,16 +6,16 @@
 \alias{addIndexMeta,ANY-method}
 \title{Add necessary elements of the metadata slot of an altervnative splicing SCFind index object}
 \usage{
-addIndexMeta.classic(object, type, read_count, stats, node_list)
+addIndexMeta.classic(object, type, read.count, stats, node_list)
 
-\S4method{addIndexMeta}{ANY}(object, type, read_count, stats, node_list)
+\S4method{addIndexMeta}{ANY}(object, type, read.count, stats, node_list)
 }
 \arguments{
 \item{object}{an SCFind class object built by the method "builtAltSpliceIndex"}
 
 \item{type}{a character to indicate the type and node contents of the index}
 
-\item{read_count}{the read count matrix built by the function "buildMatrix.read_count"}
+\item{read.count}{the read count matrix built by the function "buildMatrix.read_count"}
 
 \item{stats}{the statistics matrix built by the function "buildMatrix.stats"}
 

@@ -47,12 +47,12 @@ If you would like to explore our example datasets, please continue to the instal
 
 ## installation
 To install scfindME use the following codes in R:
-```{r }
+```{r eval=FALSE}
 install.packages("devtools")
 devtools::install_github("YY-SONG0718/scfindME")
 ```
 
-```{r}
+```{r eval=FALSE}
 library(scfindME)
 ```
 Note that you are not recommended to load `scfind` and `scfindME` libraries simutaneously since functions will collide.
@@ -78,7 +78,7 @@ read.count <- buildMatrix.read.count("directory_to_Whippet_.psi.gz_files", metad
 # Either use scaled.above matrix or scaled below matrix to build an index
 scaled.above <- buildMatrix.scaled.above(matrix.original)
 
-scaled.below <_ buildMatrix.scaled.below(matrix.original)
+scaled.below <- buildMatrix.scaled.below(matrix.original)
 
 ```
 
@@ -105,10 +105,10 @@ index <- addIndexMeta(index, "above", read.count, stats, node.list)
 ```
 
 ## explore example index
-```{r}
+```{r eval=FALSE}
 # here we use the above index of glutamatergic neurons in Tasic et al. 2016 as example
 data("Tasic_2016")
-index.above.glu <- loadObject(file = url(Tasic_2016["Glu_above"]))
+index.above.glu <- loadObject(file = Tasic_2016["Glu_above"])
 ```
 
 ------------
@@ -118,7 +118,7 @@ In scfindME you can use all searching functions that exists in [`scfind` package
 
 ## search for nodes of a gene in interest
 In scfindME we filter alternative splicing nodes to ensure reliable PSI values. Thus it is useful to usethe following function to search for an encoded node list of a specific gene in an index.
-```{r}
+```{r eval=FALSE}
 # lets observe two neuron cell specific genes
 gn <- geneNodes(index.above.glu, c("Snap25", "Gria2"), "gene_name")
 gn
@@ -127,14 +127,14 @@ gn
 
 ## search for node details
 If you have a list of interested nodes, to find node details use the following funtion.
-```{r}
+```{r eval=FALSE}
 nd <- nodeDetails(index.above.glu, c("ENSMUSG00000033981.14_29", "ENSMUSG00000027273.13_14"))
 nd
 ```
 
 ## search for cell type with a node list
 In an scfindME index with metadata, please use `hyperQueryCellTypesAS` to search for enriched cell types using a node list.
-```{r}
+```{r eval=FALSE}
 # observe the flip-flop exon in Gria2 gene
 rs <- hyperQueryCellTypesAS(index.above.glu, node.list = c("ENSMUSG00000033981.14_28"))
 # this node serves as best marker for L4 Scnn1a cell type
@@ -150,14 +150,14 @@ barplot(-log10(rs2$pval+0.00001), ylab = "-log10(pval)", las = 2, names.arg = rs
 
 ## search for cell type with a gene
 Since there are multiple alternative splicing nodes within a gene, it is useful to find a conbination of nodes that serves as a specific marker of a cell type. The follwing function integrates `geneNodes`, `markerGenes` and `hyperQueryCellTypes` to find an optimized node set. Note that this function is relatively strict so needs improvements.
-```{r}
+```{r eval=FALSE}
 ns <- findNodeSets(index.above.glu, c("Madd"), "gene_name")
 ns
 ```
 
 
 ### sessionInfo()
-```{r}
+```{r eval=FALSE}
 sessionInfo()
 ```
 

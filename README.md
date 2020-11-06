@@ -1,4 +1,4 @@
-# scfindME - a search engine for alternative splicing patterns in single-cell atlas
+# scfindME - mining alternative splicing patterns in single-cell atlas
 
 ## Introduction
 The emergence of large single cell RNA-seq(scRNA-seq) datasets facilitates biological discoveries at single-cell resolution. For single cell atlas to be useful to users from all disciplines, it should be organized in an accessible way. `scfind` builds an index for scRNA-seq datasets and allows fast searching with feature lists, and return cell types or individual cells [scfind](https://github.com/hemberg-lab/scfind).  

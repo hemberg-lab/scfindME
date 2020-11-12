@@ -16,6 +16,8 @@ buildMatrix.original <- function(dir, metadata, column_label){
   matrix <-  data.frame(node_names = as.factor(node.list))
   read.count <- data.frame(node_names = as.factor(node.list))
   
+  message("collecting values from files")
+  
   # collect PSI values from input: SRA_id.psi.gz files from Whippet output
   for (run in metadata[[column_label]]){
     temp.run <- as.character(run)
@@ -23,9 +25,10 @@ buildMatrix.original <- function(dir, metadata, column_label){
     temp.matrix <- read.table(temp.url, header=TRUE)
     matrix[, temp.run] <- temp.matrix[, "Psi"]  
     read.count[, temp.run] <- temp.matrix[, "Total_Reads"]
-    
+    message(paste("collecting", run))
   } 
   
+  message("all values collected, generating matrix...")
   
   matrix<- matrix[!duplicated(matrix$node_names), ]
   

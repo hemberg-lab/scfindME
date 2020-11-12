@@ -22,6 +22,7 @@ Collate:
     'CoreMethods.R'
     'Tasic_2016.R'
     'buildMatrix.R'
+    'buildMatrix_new.R'
     'zzz.R'
 Suggests: 
     knitr

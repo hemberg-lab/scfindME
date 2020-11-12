@@ -4,8 +4,8 @@
 #' @param metadata metadata of the alternative splicing dataset, must include a column named "SRA" and has SRA ids for all Whippet quantified samples
 #' @param column_label the column name which indicates cell id and .pai.gz file name in metadata, usually use "SRA" and use SRA ids
 #' @name buildMatrix.original
-#' @importFrom readr read_tsv
-#' @importFrom dplyr select mutate distinct filter group_by ungroup 
+#' @importFrom readr read_tsv show_progress
+#' @importFrom dplyr select mutate distinct filter group_by ungroup case_when
 #' @importFrom tidyr unite pivot_wider
 #' @return a tibble object for further scailing
 #'

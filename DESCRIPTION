@@ -9,7 +9,7 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports:
-    methods, SingleCellExperiment, SummarizedExperiment, Rcpp (>= 0.8.5), shiny, data.table, DT, hash, ggplot2, stats, Matrix, biomaRt
+    methods, SingleCellExperiment, SummarizedExperiment, Rcpp (>= 0.8.5), shiny, data.table, DT, hash, ggplot2, stats, Matrix, biomaRt, dplyr, tidyr, readr
 LinkingTo: Rcpp, RcppArmadillo
 Depends: R(>= 3.5)
 RcppModules: EliasFanoDB

@@ -4,12 +4,13 @@
 #' @param metadata metadata of the alternative splicing dataset, must include a column named "SRA" and has SRA ids for all Whippet quantified samples
 #' @param column_label the column name which indicates cell id and .pai.gz file name in metadata, usually use "SRA" and use SRA ids
 #' @name buildMatrix.original
+#' @importFrom magrittr %>%
 #' @importFrom readr read_tsv show_progress
 #' @importFrom dplyr select mutate distinct filter group_by ungroup case_when
 #' @importFrom tidyr unite pivot_wider
 #' @return a tibble object for further scailing
 #'
-buildMatrix.original <- function(file, Sample){
+buildMatrix.original <- function(file){
   
   data <- readr::read_tsv(file, col_names=TRUE, progress=show_progress())
   
@@ -21,9 +22,9 @@ buildMatrix.original <- function(file, Sample){
     dplyr::distinct(Gene_node, .keep_all = TRUE) %>%
     dplyr::select(Sample, Gene_node, Total_Reads, Psi) %>%
     dplyr::mutate(Filter = case_when(Total_Reads < 10 ~ "DROP",
-                                           Total_Reads >= 10 ~ "KEEP",
-                                           TRUE ~ NA_character_
-                                           )) %>%
+                                     Total_Reads >= 10 ~ "KEEP",
+                                     TRUE ~ NA_character_
+    )) %>%
     dplyr::filter(Filter == "KEEP") %>%
     dplyr::select(Sample, Gene_node, Psi) %>%
     dplyr::ungroup(Sample) %>%
@@ -72,7 +73,7 @@ scaleMatrix.diff <- function(matrix.original){
 #' @return a matrix object(scaled above)
 #' 
 buildMatrix.above <- function(matrix.scaled){
-
+  
   # above matrix for above index
   matrix.above <- data.frame(row.names = rownames(matrix.scaled))
   # set na and below ones to zero
@@ -94,7 +95,7 @@ buildMatrix.above <- function(matrix.scaled){
 #' @return a matrix object(scaled below)
 #' 
 buildMatrix.below <- function(matrix.scaled){
-
+  
   # below matrix for below index
   matrix.below <- data.frame(row.names = rownames(matrix.scaled))
   

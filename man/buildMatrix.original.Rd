@@ -4,7 +4,7 @@
 \alias{buildMatrix.original}
 \title{Builds an original \code{matrix} from a given Whippet Collapsed Quant .psi.gz files containing directory and a metadata}
 \usage{
-buildMatrix.original(file, Sample)
+buildMatrix.original(file)
 }
 \arguments{
 \item{dir}{a directory containing .psi.gz files from Whippet quantification, looks like "/lustre/scratch117/cellgen/team218/ys6/TM_FACS/MicroExonator/Whippet/Quant/Single_Cell/Unpooled/"}

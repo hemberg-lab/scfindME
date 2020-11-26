@@ -146,54 +146,30 @@ buildMatrix.stats <- function(matrix.original, matrix.scaled){
 #' @importFrom biomaRt useMart useDataset getBM
 #' @importFrom utils read.table
 #' 
-buildMatrix.node_list <- function(dir, matrix.scaled){
-  url <- paste(as.character(dir), as.character(colnames(matrix.scaled)[1]), ".psi.gz", sep = "")
-  t1 = read.table(url, header=TRUE)
-  t1$node_names <- as.factor(paste(as.character(t1[, "Gene"]), as.character(t1[, "Node"]), sep = "_"))
-  # create @metadata$node_list
-  test1 <- t1[!duplicated(t1$node_names), ]
-  
-  gene_id <- as.character(test1$Gene[which(test1$node_names%in%rownames(matrix.scaled))])
-  node_num <- as.character(test1$Node[which(test1$node_names%in%rownames(matrix.scaled))])
-  
-  # get gene is to search for names (i.e. external gene name) in ensembl
-  gene <- gsub("\\.\\d+$", "", gene_id)
-  coord <- as.character(test1$Coord[which(test1$node_names%in%rownames(matrix.scaled))])
-  strand <- as.character(test1$Strand[which(test1$node_names%in%rownames(matrix.scaled))])
-  type <- as.character(test1$Type[which(test1$node_names%in%rownames(matrix.scaled))])
-  
-  
-  gene.node <- data.frame(
-    "gene_id" = gene_id,
-    "gene" = gene,
-    "node_id" = rownames(matrix.scaled),
-    "node_num" = node_num,
-    "coord" = coord,
-    "strand" = strand,
-    "type" = type
-  )
+buildMatrix.node_list <- function(matrix.scaled, nodes_details_data){
+  node_list <- rownames(matrix.scaled)
+  node_list_all <- nodes_details_data[which(nodes_details_data$Gene_node %in% node_list), ]
   
   # install.packages("XML", repos = "http://www.omegahat.net/R")
   # BiocManager::install("biomaRt")
-  # library("biomaRt")
+  library("biomaRt")
   # listMarts()
   ensembl <- useMart("ensembl")
   ensembl <- useDataset("mmusculus_gene_ensembl",mart=ensembl)
+  node_list_all$Gene_num <- gsub("\\.\\d+$", "", node_list_all$Gene)
   
   # takes a few minuites to match gene to name
   gene_name <- getBM(attributes= c("ensembl_gene_id","external_gene_name"),
                      filters= "ensembl_gene_id",
-                     values = gene,
+                     values = node_list_all$Gene_num,
                      mart= ensembl)
   
   # de-duplicate and match gene name using gene id
   gene_name <- gene_name[!duplicated(gene_name$ensembl_gene_id), ]
   
-  gene.node <- merge(gene.node, gene_name, by.x = "gene", by.y = "ensembl_gene_id", all.x=TRUE)
+  gene_node_all <- merge(node_list_all, gene_name, by.x = "Gene_num", by.y = "ensembl_gene_id", all.x=TRUE)
   
-  gene.node <- setNames(gene.node,c("gene", "gene_id", "node_id", "node_num", "coord", "strand", "type", "gene_name"))
-  
-  return(gene.node)
+  return(gene_node_all)
   
 }
 

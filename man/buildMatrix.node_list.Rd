@@ -5,12 +5,12 @@
 \title{Collect details of all nodes, including gene id, gene name, node type, strand, coordinates etc.
 The node_list matrix would be stored in the alternative splicing index metadata slot}
 \usage{
-buildMatrix.node_list(dir, matrix.scaled)
+buildMatrix.node_list(matrix.scaled, nodes_details_data)
 }
 \arguments{
-\item{dir}{a directory containing .psi.gz files from Whippet quantification}
-
 \item{matrix.scaled}{the output scaled matrix from either the function "buildMatrix.scaled.above" or "buildMatrix.scaled.below"}
+
+\item{dir}{a directory containing .psi.gz files from Whippet quantification}
 }
 \value{
 a matrix object(node_list)

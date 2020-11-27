@@ -129,7 +129,7 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
 {
   continue = FALSE
   node.list.2 = gsub("[\\*\\-]","", node.list)
-  if(is.null(object@metadata$node_list[["node_list"]])){
+  if(is.null(object@metadata$node_list[["node_id"]])){
     question1 <- readline("Warning: missing node_list metadata in index, can not verify existance of query nodes in index! \nWould you like to continue query? (Y/N)")
     if(regexpr(question1, 'y', ignore.case = TRUE) == 1){
       continue = TRUE
@@ -137,7 +137,7 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
       return("Exit query")
     }
   }  else {
-    if(!all(node.list.2%in%as.character(object@metadata$node_list[["node_list"]]))){
+    if(!all(node.list.2%in%as.character(object@metadata$node_list[["node_id"]]))){
       stop("Query nodes not in index, please change your query")
     }
     else {

@@ -16,7 +16,11 @@ devtools::load_all("~/scfindME")
 
 ## Use pseudobulk Whippet quant output to build an original node-to-cell Psi matrix
 ```{r}
-mo <- buildMatrix.original("/lustre/scratch117/cellgen/team218/gp7/Micro-exons/Runs/Paper/single_cell/MicroExonator/Whippet/Quant/Single_Cell/Pseudo_bulks/pseudo_bulks.psi.tsv")
+data <- readr::read_tsv("/lustre/scratch117/cellgen/team218/gp7/Micro-exons/Runs/Paper/single_cell/MicroExonator/Whippet/Quant/Single_Cell/Pseudo_bulks/pseudo_bulks.psi.tsv", col_names=TRUE, progress=show_progress())
+
+
+
+
 ```
 
 ## Scale the original matrix by Z-score or diff from mean
@@ -58,8 +62,8 @@ index.below.diff <- buildAltSpliceIndex(m.below.diff, metadata = metadata, datas
 #TODO add metadata to index
 
 ```{r}
-index.above.z@metadata$node_list <- gene.node
-index.below.z@metadata$node_list <- gene.node
+index.above.z@metadata$node_list <- gene.nodes
+index.below.z@metadata$node_list <- gene.nodes
 ```
 ##node_list
 ##stats
@@ -74,8 +78,8 @@ cell_types <- cellTypeNames(index.above.z)
 
 ##TODO select those diff > 0.1
 ```{r}
-markers_Chrna6 <- cellTypeMarkers(index.above.z, "Tasic_2016.L5_Chrna6")
-markers_Chrna6
+markers_Scnn1a <- cellTypeMarkers(index.above.z, "Tasic_2016.L4_Scnn1a")
+markers_Scnn1a
 ```
 
 e.g. Snap25

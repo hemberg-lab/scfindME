@@ -2,18 +2,18 @@
 % Please edit documentation in R/buildMatrix_new.R
 \name{buildMatrix.above}
 \alias{buildMatrix.above}
-\title{Scale the original matrix and build the input matrix of an above index
-The output of this function correspond to the input param "psival" in the buildAltSpliceIndex method}
+\title{Select the desired type of splicing events nodes from the scaled matrix
+Above dataset mean inclusion events}
 \usage{
 buildMatrix.above(matrix.scaled)
 }
 \arguments{
-\item{matrix.original}{the output original matrix from the function "buildMatrix.original"}
+\item{matrix.scaled}{the output of either scaleMatrix.diff or scaleMatrix.z}
 }
 \value{
-a matrix object(scaled above)
+a matrix object
 }
 \description{
-Scale the original matrix and build the input matrix of an above index
-The output of this function correspond to the input param "psival" in the buildAltSpliceIndex method
+Select the desired type of splicing events nodes from the scaled matrix
+Above dataset mean inclusion events
 }

@@ -47,13 +47,14 @@ If you would like to explore our example datasets, please continue to the instal
 
 ## installation
 To install scfindME use the following codes in R:
-```{r eval=FALSE}
+```{r warning=FALSE}
 install.packages("devtools")
-devtools::install_github("YY-SONG0718/scfindME")
+devtools::install_github("hemberg-lab/scfindME")
 ```
 
-```{r eval=FALSE}
+```{r}
 library(scfindME)
+library(ggplot2)
 ```
 Note that you are not recommended to load `scfind` and `scfindME` libraries simutaneously since functions will collide.
 
@@ -100,6 +101,7 @@ node.list <- buildMatrix.node_list(dir, scaled.above)
 # For example you use the above matrix to build the index
 index <- buildAltSpliceIndex(scaled.above, metadata, "dataset_name", "primary_type", qb = 2)
 
+# add metadata to the index for comprehending results
 index <- addIndexMeta(index, "above", read.count, stats, node.list)
 
 ```

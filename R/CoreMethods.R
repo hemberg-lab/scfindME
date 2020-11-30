@@ -179,7 +179,7 @@ node.details <- function(object, node.list){
 
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
 
-  details <- object@metadata$node_list[which(as.character(object@metadata$node_list[["node_id"]])%in%node.list),]
+  details <- object@metadata$node_list[which(as.character(object@metadata$node_list[["Gene_node"]])%in%node.list),]
   return(details)
 
 }
@@ -239,7 +239,7 @@ gene.node.sets <- function(object, gene.list, query.type){
   result <- cell.types.phyper.test(object, query)
     for (j in seq(1, nrow(result))){
       if(result$pval[[j]] <= 0.05){
-        message("find a node set")
+        print("find a node set\n")
         print(query)
         sets <- rbind(sets, result[j, ])
       }

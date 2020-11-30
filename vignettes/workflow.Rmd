@@ -1,104 +1,158 @@
 ---
-title: "R Notebook"
-output:
-  html_document:
-    df_print: paged
+html_document:
+output: html_document
+author: Yuyao Song song-yy17@mails.tsinghua.edu.cn
+title: "ScfindME: mining alternative splicing patterns in single-cell atlases"
+df_print: paged
 ---
+# Introduction
+Large single cell RNA-seq datasets have been generating rapidly. In long-read large single cell atlases, the complete transcriptome sequence are obtained for individual cells. In addition to gene expression levels, the quantification of alternative splicing events became feseable at single cell resolution.
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+To facilitate the interpretation of alternative splicing patterns in annotated single cell atlas for users from all disciplines, a search tool scfindME had been developed. 
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+## searching
+Indexing and searching mechanism of scfindME is built on top of `scfind`. Information about scfind could be find in https://github.com/hemberg-lab/scfind, a manuscript describing `scfind` in details is available in [bioRxiv_scfind](https://doi.org/10.1101/788596).
 
-##Install scfindME from source
-```{r}
+## alternative splicing quantification
+Single cell alternative splicing event quantification is based on a workflow `MicroExonator`, especially in the integrated method `Whippet`. Information about `MicroExonator` could be find in https://github.com/hemberg-lab/MicroExonator, a manuscript describing `MicroExonator` in details is available in [bioRxiv_MicroExonator](https://doi.org/10.1101/2020.02.12.945683). Information about `Whippet` could be find in https://github.com/timbitz/Whippet.jl.
+
+## processed data examples in `scfindME`
+In `scfindME` we provide 2 sample datasets for illustrative purposes:
+
+* Mouse glutamatergic and GABA-ergic neurons from Allan Brain Atlas([Tasic et al., 2016](https://www.nature.com/articles/nn.4216)).
+* Mouse complete tissue cell atlas Tabula Muris(FACS) i.e. TM_FACS ([The Tabula Muris Consortium](https://doi.org/10.1038/s41586-018-0590-4)) 
+
+----------
+
+# Start up
+
+## starting matreial
+
+If you would like to process your own single cell RNA-seq dataset, please run Whippet Quantification analysis using the MicroExonator workflow. You need a UNIX machine and possibly a high-performance computer cluster for large datasets. Please refer to the "single cell" chapter in MicroExonator documentation for detailed user guide.
+    * You will need fastq files for raw input, either local or a list of SRA ids.
+    * You also need a metadata file, which must contain a column of individual cell fastq file identifier, usually named "SRA" if you use SRA ids e.g. "SRR2138604". This column should also correspond to your `Whippet` .psi.gz file names e.g. "SRR2138604.psi.gz". The metadata also need a column indicating the cell type e.g. "primary_type".
+
+If you would like to explore our example datasets, please continue to the installation chapter of scfindME.
+
+# Install
+## Install scfindME from source - mergedWhippet version
+
+```{r load scfindME, warning=FALSE}
 devtools::load_all("~/scfindME")
 ```
 
-## Use pseudobulk Whippet quant output to build an original node-to-cell Psi matrix
-```{r}
-data <- readr::read_tsv("/lustre/scratch117/cellgen/team218/gp7/Micro-exons/Runs/Paper/single_cell/MicroExonator/Whippet/Quant/Single_Cell/Pseudo_bulks/pseudo_bulks.psi.tsv", col_names=TRUE, progress=show_progress())
-
-
-
-
+## Build original matrix from scratch
+```{r Build matrix from scratch, eval=FALSE}
+mo <- buildMatrix.original("merged_Whippet_file.psi.tsv")
 ```
 
-## Scale the original matrix by Z-score or diff from mean
-```{r}
+## Use pseudobulk Whippet quant output to build an original node-to-cell Psi matrix
+```{r Load pre-built example data}
+# load pre-built original matrix
+mo <- readRDS("~/mergedWhippet.matrix.original.rds")
+mo[1:5, 1:5]
+
+# load metadata, 
+metadata <- readRDS("~/scfindME_data/Tasic2016/pseudobulk_meta.rds")
+metadata[1:5, ]
+```
+
+## Scale the original matrix
+```{r Scale by Z score and diff}
 mo.z <- scaleMatrix.z(mo)
 mo.diff <- scaleMatrix.diff(mo)
+mo.z[1:5, 1:5]
+mo.diff[1:5, 1:5]
 ```
 
-## Build above and below index objects for both scailings
-```{r}
+## Build input matrix objects to be further compressed to an index
+```{r Scale above and below}
+
+# We use the above matrix to encode splicing events, that is the inclusion of a node in a cell have a PSI value above tissue mean
 m.above.z <- buildMatrix.above(mo.z)
 m.above.diff <- buildMatrix.above(mo.diff)
+
+# Likewise, the below matrix only contains splicing events that have a PSI value below tissue mean
 m.below.z <- buildMatrix.below(mo.z)
 m.below.diff <- buildMatrix.below(mo.diff)
 ```
 
-```{r}
+```{r echo=FALSE}
 meta <- readr::read_tsv("/lustre/scratch117/cellgen/team218/gp7/Micro-exons/Runs/Paper/single_cell/MicroExonator/Whippet/Quant/Single_Cell/Pseudo_bulks/pseudo_bulk_membership.tsv")
 meta <- data.frame(meta)
 meta$primary_type <- gsub("_\\d*$", "", meta$pseudo_bulk_ID)
 meta.new <- meta[-(340:345), ]
 ```
 
-```{r}
-metadata <- readRDS("~/scfindME_data/Tasic2016/pseudobulk_meta.rds")
-```
-
+## Index building
 
 ```{r}
 index.above.z <- buildAltSpliceIndex(m.above.z, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
 index.above.diff <- buildAltSpliceIndex(m.above.diff, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
 ```
-
 ```{r}
 index.below.z <- buildAltSpliceIndex(m.below.z, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
 index.below.diff <- buildAltSpliceIndex(m.below.diff, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
 ```
 
-#TODO add metadata to index
-
+# Add node info and PSI statistics to index@metadata
+## node_list
 ```{r}
+# Details for all nodes in Whippet
+nodes_info_all <- readRDS("~/nodes_info.rds")
+
+# Select only the nodes present in index
+gene.nodes <- buildMatrix.node_list(m.above.z, nodes_info_all)
+
+# Add node info to index
 index.above.z@metadata$node_list <- gene.nodes
 index.below.z@metadata$node_list <- gene.nodes
 ```
-##node_list
-##stats
 
-#store some useful variables
+## stats
+```{r eval=FALSE}
+stats_z <- buildMatrix.stats(mo, m.above.z)
+index.above.z@metadata$stats <- stats_z
+```
+
+# Store some useful variables
 ```{r}
 node_list <- scfindGenes(index.above.z)
 cell_types <- cellTypeNames(index.above.z)
 ```
 
-#cellTypeMarkers
+# Find the sigature nodes of a cell type
 
-##TODO select those diff > 0.1
-```{r}
-markers_Scnn1a <- cellTypeMarkers(index.above.z, "Tasic_2016.L4_Scnn1a")
+```{r echo=TRUE}
+markers_Scnn1a <- cellTypeMarkers(index.above.diff, "Tasic_2016.L4_Scnn1a")
 markers_Scnn1a
 ```
 
+# Lets examine how this paor of adjacent exon
 e.g. Snap25
 ENSMUSG00000027273.13_9
 ENSMUSG00000027273.13_10
 
+Which cells have higher than average PSI of node 9?
 ```{r}
 findCellTypes(index.above.z, "ENSMUSG00000027273.13_9")
 ```
 
+Which cells have lower than average PSI of node 9?
 ```{r}
 findCellTypes(index.below.z, "ENSMUSG00000027273.13_9")
 ```
 
-## How do I store an internal dataset for node info since they don't change?
 
 #hyperQueryCellTypes
 ```{r}
 hyperQueryCellTypesAS(index.above.z, c("-ENSMUSG00000027273.13_9","ENSMUSG00000027273.13_10"))
+nodeDetails(index.above.z, c("-ENSMUSG00000027273.13_9","ENSMUSG00000027273.13_10"))
+```
+
+##Session info for reproducibility
+```{r}
+sessionInfo()
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.

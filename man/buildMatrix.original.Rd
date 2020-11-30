@@ -7,11 +7,7 @@
 buildMatrix.original(file)
 }
 \arguments{
-\item{dir}{a directory containing .psi.gz files from Whippet quantification, looks like "/lustre/scratch117/cellgen/team218/ys6/TM_FACS/MicroExonator/Whippet/Quant/Single_Cell/Unpooled/"}
-
-\item{metadata}{metadata of the alternative splicing dataset, must include a column named "SRA" and has SRA ids for all Whippet quantified samples}
-
-\item{column_label}{the column name which indicates cell id and .pai.gz file name in metadata, usually use "SRA" and use SRA ids}
+\item{file}{the merged Whippet .psi.tsv file, can be an object or a url}
 }
 \value{
 a tibble object for further scailing

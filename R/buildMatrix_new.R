@@ -1,8 +1,7 @@
 #' Builds an original \code{matrix} from a given Whippet Collapsed Quant .psi.gz files containing directory and a metadata 
 #'
-#' @param dir a directory containing .psi.gz files from Whippet quantification, looks like "/lustre/scratch117/cellgen/team218/ys6/TM_FACS/MicroExonator/Whippet/Quant/Single_Cell/Unpooled/"
-#' @param metadata metadata of the alternative splicing dataset, must include a column named "SRA" and has SRA ids for all Whippet quantified samples
-#' @param column_label the column name which indicates cell id and .pai.gz file name in metadata, usually use "SRA" and use SRA ids
+#'
+#' @param file the merged Whippet .psi.tsv file, can be an object or a url
 #' @name buildMatrix.original
 #' @importFrom magrittr %>%
 #' @importFrom readr read_tsv show_progress
@@ -36,6 +35,13 @@ buildMatrix.original <- function(file){
   return(matrix.original)
 }
 
+#' Scale the original \code{matrix} with Z-score normalization
+#'
+#'
+#' @param matrix.original the original matrix from buildMatrix.original
+#' @name scaleMatrix.z
+#' @return a scaled matrix object
+#'
 
 scaleMatrix.z <- function(matrix.original){
   df <- data.frame(matrix.original, row.names = "Gene_node")
@@ -49,6 +55,13 @@ scaleMatrix.z <- function(matrix.original){
   return(matrix.scaled_z)
 }
 
+
+#' Scale the original \code{matrix} with difference from dataset mean
+#' This version is stringent that it requires the difference of PSI to mean is higher than 0.2
+#' @param matrix.original the original matrix from buildMatrix.original
+#' @name scaleMatrix.diff
+#' @return a scaled matrix object
+#'
 scaleMatrix.diff <- function(matrix.original){
   df <- data.frame(matrix.original, row.names = "Gene_node")
   dm <- as.matrix(df)
@@ -60,17 +73,25 @@ scaleMatrix.diff <- function(matrix.original){
   matrix.scaled_diff <- matrix.scaled_diff*100
   
   matrix.scaled_diff <- matrix.scaled_diff[which(rowSums(is.na(matrix.scaled_diff)) < ncol(matrix.scaled_diff)), ]
-  return(matrix.scaled_diff)
+  
+  matrix.scaled_diff_selected  <- data.frame(row.names = rownames(matrix.scaled_diff))
+  
+  for (cell in seq(1, ncol(matrix.scaled_diff))){
+    tv <- matrix.scaled_diff[, cell]
+    temp <- which(abs(tv) < 20)
+    tv[temp] = 0
+    matrix.scaled_diff_selected[[colnames(matrix.scaled_diff)[cell]]] <- tv
+  }
+  
+  return(matrix.scaled_diff_selected)
 }
 
 
-#' Scale the original matrix and build the input matrix of an above index
-#' The output of this function correspond to the input param "psival" in the buildAltSpliceIndex method
-#' @param matrix.original the output original matrix from the function "buildMatrix.original"
-#'
+#' Select the desired type of splicing events nodes from the scaled matrix
+#' Above dataset mean inclusion events
+#' @param matrix.scaled the output of either scaleMatrix.diff or scaleMatrix.z
 #' @name buildMatrix.above
-#'
-#' @return a matrix object(scaled above)
+#' @return a matrix object
 #' 
 buildMatrix.above <- function(matrix.scaled){
   
@@ -86,13 +107,12 @@ buildMatrix.above <- function(matrix.scaled){
   return(matrix.above)
 }
 
-#' Scale the original matrix and build the input matrix of a below index
-#' The output of this function correspond to the input param "psival" in the buildAltSpliceIndex method
-#' @param matrix.original the output original matrix from the function "buildMatrix.original"
-#'
+
+#' Select the desired type of splicing events nodes from the scaled matrix
+#' Below dataset mean inclusion events
+#' @param matrix.scaled the output of either scaleMatrix.diff or scaleMatrix.z
 #' @name buildMatrix.below
-#'
-#' @return a matrix object(scaled below)
+#' @return a matrix object
 #' 
 buildMatrix.below <- function(matrix.scaled){
   
@@ -125,9 +145,13 @@ buildMatrix.stats <- function(matrix.original, matrix.scaled){
   matrix.original <- as.matrix(df)
   # create @metadata$stats
   # calculate node means and SD value and store in index
+  message("calculating mean PSI across dataset...")
   
-  sd <- transform(matrix.original, SD=apply(matrix.original, 1, sd, na.rm = TRUE))
   mean <- transform(matrix.original, mean=apply(matrix.original, 1, mean, na.rm = TRUE))
+  
+  message("calculating SD...")
+  sd <- transform(matrix.original, SD=apply(matrix.original, 1, sd, na.rm = TRUE))
+  
   mean$SD <- sd$SD
   mean <- mean[order(mean$SD), ]
   stats <- mean[, c("mean", "SD")]

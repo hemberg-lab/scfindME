@@ -44,7 +44,7 @@ buildMatrix.original <- function(file){
 #'
 
 scaleMatrix.z <- function(matrix.original){
-  df <- data.frame(matrix.original, row.names = "Gene_node")
+  df <- data.frame(matrix.original, row.names = rownames(matrix.original))
   dm <- as.matrix(df)
   
   matrix.scaled_z <- t(scale(t(dm)))
@@ -63,7 +63,7 @@ scaleMatrix.z <- function(matrix.original){
 #' @return a scaled matrix object
 #'
 scaleMatrix.diff <- function(matrix.original){
-  df <- data.frame(matrix.original, row.names = "Gene_node")
+  df <- data.frame(matrix.original, row.names = rownames(matrix.original))
   dm <- as.matrix(df)
   
   mean <- rowMeans(dm, na.rm = TRUE)
@@ -141,7 +141,7 @@ buildMatrix.below <- function(matrix.scaled){
 #' @return a matrix object(stats)
 #' 
 buildMatrix.stats <- function(matrix.original, matrix.scaled){
-  df <- data.frame(matrix.original, row.names = "Gene_node")
+  df <- data.frame(matrix.original, row.names = rownames(matrix.original))
   matrix.original <- as.matrix(df)
   # create @metadata$stats
   # calculate node means and SD value and store in index

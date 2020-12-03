@@ -5,45 +5,18 @@ author: Yuyao Song song-yy17@mails.tsinghua.edu.cn
 title: "ScfindME: mining alternative splicing patterns in single-cell atlases"
 df_print: paged
 ---
-# Introduction
-Large single cell RNA-seq datasets have been generating rapidly. In long-read large single cell atlases, the complete transcriptome sequence are obtained for individual cells. In addition to gene expression levels, the quantification of alternative splicing events became feseable at single cell resolution.
-
-To facilitate the interpretation of alternative splicing patterns in annotated single cell atlas for users from all disciplines, a search tool scfindME had been developed. 
-
-## searching
-Indexing and searching mechanism of scfindME is built on top of `scfind`. Information about scfind could be find in https://github.com/hemberg-lab/scfind, a manuscript describing `scfind` in details is available in [bioRxiv_scfind](https://doi.org/10.1101/788596).
-
-## alternative splicing quantification
-Single cell alternative splicing event quantification is based on a workflow `MicroExonator`, especially in the integrated method `Whippet`. Information about `MicroExonator` could be find in https://github.com/hemberg-lab/MicroExonator, a manuscript describing `MicroExonator` in details is available in [bioRxiv_MicroExonator](https://doi.org/10.1101/2020.02.12.945683). Information about `Whippet` could be find in https://github.com/timbitz/Whippet.jl.
-
-## processed data examples in `scfindME`
-In `scfindME` we provide 2 sample datasets for illustrative purposes:
-
-* Mouse glutamatergic and GABA-ergic neurons from Allan Brain Atlas([Tasic et al., 2016](https://www.nature.com/articles/nn.4216)).
-* Mouse complete tissue cell atlas Tabula Muris(FACS) i.e. TM_FACS ([The Tabula Muris Consortium](https://doi.org/10.1038/s41586-018-0590-4)) 
-
-----------
-
-# Start up
-
-## starting matreial
-
-If you would like to process your own single cell RNA-seq dataset, please run Whippet Quantification analysis using the MicroExonator workflow. You need a UNIX machine and possibly a high-performance computer cluster for large datasets. Please refer to the "single cell" chapter in MicroExonator documentation for detailed user guide.
-    * You will need fastq files for raw input, either local or a list of SRA ids.
-    * You also need a metadata file, which must contain a column of individual cell fastq file identifier, usually named "SRA" if you use SRA ids e.g. "SRR2138604". This column should also correspond to your `Whippet` .psi.gz file names e.g. "SRR2138604.psi.gz". The metadata also need a column indicating the cell type e.g. "primary_type".
-
-If you would like to explore our example datasets, please continue to the installation chapter of scfindME.
-
 # Install
 ## Install scfindME from source - mergedWhippet version
 
 ```{r load scfindME, warning=FALSE}
-devtools::load_all("~/scfindME")
+#devtools::load_all("~/scfindME")
+devtools::install_github("hemberg-lab/scfindME", ref = "mergedWhippet")
+library(scfindME)
 ```
 
 ## Build original matrix from scratch
 ```{r Build matrix from scratch, eval=FALSE}
-mo <- buildMatrix.original("merged_Whippet_file.psi.tsv")
+mo <- buildMatrix.original("/lustre/scratch117/cellgen/team218/gp7/Micro-exons/Runs/Paper/single_cell/MicroExonator/Whippet/Quant/Single_Cell/Pseudo_bulks/pseudo_bulks.psi.tsv")
 ```
 
 ## Use pseudobulk Whippet quant output to build an original node-to-cell Psi matrix
@@ -53,7 +26,7 @@ mo <- readRDS("~/mergedWhippet.matrix.original.rds")
 mo[1:5, 1:5]
 
 # load metadata, 
-metadata <- readRDS("~/scfindME_data/Tasic2016/pseudobulk_meta.rds")
+metadata <- readRDS("~/lustre/scratch117/cellgen/team218/ys6/pseudobulk_meta.rds")
 metadata[1:5, ]
 ```
 
@@ -102,18 +75,13 @@ index.below.diff <- buildAltSpliceIndex(m.below.diff, metadata = metadata, datas
 nodes_info_all <- readRDS("~/nodes_info.rds")
 
 # Select only the nodes present in index
-gene.nodes <- buildMatrix.node_list(m.above.z, nodes_info_all)
+gene.nodes <- buildMatrix.node_list(m.above.diff, nodes_info_all)
 
 # Add node info to index
 index.above.z@metadata$node_list <- gene.nodes
-index.below.z@metadata$node_list <- gene.nodes
+index.above.diff@metadata$node_list <- gene.nodes
 ```
 
-## stats
-```{r eval=FALSE}
-stats_z <- buildMatrix.stats(mo, m.above.z)
-index.above.z@metadata$stats <- stats_z
-```
 
 # Store some useful variables
 ```{r}
@@ -122,13 +90,13 @@ cell_types <- cellTypeNames(index.above.z)
 ```
 
 # Find the sigature nodes of a cell type
-
+# Use the diff scailing
 ```{r echo=TRUE}
-markers_Scnn1a <- cellTypeMarkers(index.above.diff, "Tasic_2016.L4_Scnn1a")
-markers_Scnn1a
+markers_Ptgs2 <- cellTypeMarkers(index.above.diff, "Tasic_2016.L2/3_Ptgs2")
+markers_Ptgs2
 ```
 
-# Lets examine how this paor of adjacent exon
+# Lets examine how this pair of adjacent exon
 e.g. Snap25
 ENSMUSG00000027273.13_9
 ENSMUSG00000027273.13_10
@@ -146,7 +114,8 @@ findCellTypes(index.below.z, "ENSMUSG00000027273.13_9")
 
 #hyperQueryCellTypes
 ```{r}
-hyperQueryCellTypesAS(index.above.z, c("-ENSMUSG00000027273.13_9","ENSMUSG00000027273.13_10"))
+hyperQueryCellTypesAS(index.above.diff, c("-ENSMUSG00000027273.13_9","ENSMUSG00000027273.13_10"))
+
 nodeDetails(index.above.z, c("-ENSMUSG00000027273.13_9","ENSMUSG00000027273.13_10"))
 ```
 

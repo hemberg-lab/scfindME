@@ -8,7 +8,8 @@
 #' @importFrom dplyr select mutate distinct filter group_by ungroup case_when
 #' @importFrom tidyr unite pivot_wider
 #' @return a tibble object for further scailing
-#'
+#' @export
+#' 
 buildMatrix.original <- function(file){
   
   data <- readr::read_tsv(file, col_names=TRUE, progress=show_progress())
@@ -41,8 +42,8 @@ buildMatrix.original <- function(file){
 #' @param matrix.original the original matrix from buildMatrix.original
 #' @name scaleMatrix.z
 #' @return a scaled matrix object
-#'
-
+#' @export
+#' 
 scaleMatrix.z <- function(matrix.original){
   df <- data.frame(matrix.original, row.names = rownames(matrix.original))
   dm <- as.matrix(df)
@@ -63,7 +64,8 @@ scaleMatrix.z <- function(matrix.original){
 #' @param matrix.original the original matrix from buildMatrix.original
 #' @name scaleMatrix.diff
 #' @return a scaled matrix object
-#'
+#' @export
+#' 
 scaleMatrix.diff <- function(matrix.original){
   df <- data.frame(matrix.original, row.names = rownames(matrix.original))
   dm <- as.matrix(df)
@@ -100,6 +102,7 @@ scaleMatrix.diff <- function(matrix.original){
 #' @param matrix.scaled the output of either scaleMatrix.diff or scaleMatrix.z
 #' @name buildMatrix.above
 #' @return a matrix object
+#' @export
 #' 
 buildMatrix.above <- function(matrix.scaled){
   
@@ -121,6 +124,7 @@ buildMatrix.above <- function(matrix.scaled){
 #' @param matrix.scaled the output of either scaleMatrix.diff or scaleMatrix.z
 #' @name buildMatrix.below
 #' @return a matrix object
+#' @export
 #' 
 buildMatrix.below <- function(matrix.scaled){
   
@@ -147,6 +151,7 @@ buildMatrix.below <- function(matrix.scaled){
 #' @name buildMatrix.stats
 #'
 #' @return a matrix object(stats)
+#' @export
 #' 
 buildMatrix.stats <- function(matrix.original, matrix.scaled){
   df <- data.frame(matrix.original, row.names = rownames(matrix.original))
@@ -177,6 +182,7 @@ buildMatrix.stats <- function(matrix.original, matrix.scaled){
 #' 
 #' @importFrom biomaRt useMart useDataset getBM
 #' @importFrom utils read.table
+#' @export
 #' 
 buildMatrix.node_list <- function(matrix.scaled, nodes_details_data){
   node_list <- rownames(matrix.scaled)

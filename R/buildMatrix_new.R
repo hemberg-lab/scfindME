@@ -51,7 +51,9 @@ scaleMatrix.z <- function(matrix.original){
   
   matrix.scaled_z <- matrix.scaled_z*100
   
+  # drop all-na rows
   matrix.scaled_z <- matrix.scaled_z[which(rowSums(is.na(matrix.scaled_z)) < ncol(matrix.scaled_z)), ]
+  
   return(matrix.scaled_z)
 }
 
@@ -72,16 +74,22 @@ scaleMatrix.diff <- function(matrix.original){
   
   matrix.scaled_diff <- matrix.scaled_diff*100
   
+  # drop all-na rows
   matrix.scaled_diff <- matrix.scaled_diff[which(rowSums(is.na(matrix.scaled_diff)) < ncol(matrix.scaled_diff)), ]
   
+  # here is to select enough-different (0.2 PSI) values
+  # optional
   matrix.scaled_diff_selected  <- data.frame(row.names = rownames(matrix.scaled_diff))
   
   for (cell in seq(1, ncol(matrix.scaled_diff))){
     tv <- matrix.scaled_diff[, cell]
     temp <- which(abs(tv) < 20)
-    tv[temp] = 0
+    tv[temp] = NA
     matrix.scaled_diff_selected[[colnames(matrix.scaled_diff)[cell]]] <- tv
   }
+  
+  # drop again all-NA rows
+  matrix.scaled_diff_selected <- matrix.scaled_diff_selected[which(rowSums(is.na(matrix.scaled_diff_selected)) < ncol(matrix.scaled_diff_selected)), ]
   
   return(matrix.scaled_diff_selected)
 }

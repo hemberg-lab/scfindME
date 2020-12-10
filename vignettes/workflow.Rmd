@@ -26,7 +26,7 @@ mo <- readRDS("~/mergedWhippet.matrix.original.rds")
 mo[1:5, 1:5]
 
 # load metadata, 
-metadata <- readRDS("~/lustre/scratch117/cellgen/team218/ys6/pseudobulk_meta.rds")
+metadata <- readRDS("/lustre/scratch117/cellgen/team218/ys6/pseudobulk_meta.rds")
 metadata[1:5, ]
 ```
 
@@ -50,7 +50,10 @@ m.below.z <- buildMatrix.below(mo.z)
 m.below.diff <- buildMatrix.below(mo.diff)
 ```
 
+# previous metadata processing
 ```{r echo=FALSE}
+
+# previous metadata processing
 meta <- readr::read_tsv("/lustre/scratch117/cellgen/team218/gp7/Micro-exons/Runs/Paper/single_cell/MicroExonator/Whippet/Quant/Single_Cell/Pseudo_bulks/pseudo_bulk_membership.tsv")
 meta <- data.frame(meta)
 meta$primary_type <- gsub("_\\d*$", "", meta$pseudo_bulk_ID)

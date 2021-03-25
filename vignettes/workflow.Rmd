@@ -9,9 +9,8 @@ df_print: paged
 ## Install scfindME from source - mergedWhippet version
 
 ```{r load scfindME, warning=FALSE}
-#devtools::load_all("~/scfindME")
-devtools::install_github("hemberg-lab/scfindME", ref = "mergedWhippet")
-library(scfindME)
+devtools::load_all("~/scfindME")
+#devtools::install_github("hemberg-lab/scfindME", ref = "mergedWhippet")
 ```
 
 ## Build original matrix from scratch
@@ -29,6 +28,11 @@ mo[1:5, 1:5]
 metadata <- readRDS("/lustre/scratch117/cellgen/team218/ys6/pseudobulk_meta.rds")
 metadata[1:5, ]
 ```
+```{r select high coverage}
+hc <- rownames(mo[which(rowSums(!(is.na(mo))) > 50),])
+mo <- mo[hc, ]
+```
+
 
 ## Scale the original matrix
 ```{r Scale by Z score and diff}
@@ -36,6 +40,8 @@ mo.z <- scaleMatrix.z(mo)
 mo.diff <- scaleMatrix.diff(mo)
 mo.z[1:5, 1:5]
 mo.diff[1:5, 1:5]
+
+# hc <- rownames(mo.diff[which(rowSums(!(is.na(mo.diff))) > 50),])
 ```
 
 ## Build input matrix objects to be further compressed to an index
@@ -43,6 +49,8 @@ mo.diff[1:5, 1:5]
 
 # We use the above matrix to encode splicing events, that is the inclusion of a node in a cell have a PSI value above tissue mean
 m.above.z <- buildMatrix.above(mo.z)
+
+# here diff requires > 0.2 PSI difference
 m.above.diff <- buildMatrix.above(mo.diff)
 
 # Likewise, the below matrix only contains splicing events that have a PSI value below tissue mean
@@ -50,7 +58,7 @@ m.below.z <- buildMatrix.below(mo.z)
 m.below.diff <- buildMatrix.below(mo.diff)
 ```
 
-# previous metadata processing
+# previous metadata processing, skip if metadata has been loaded
 ```{r echo=FALSE}
 
 # previous metadata processing
@@ -61,18 +69,7 @@ meta.new <- meta[-(340:345), ]
 ```
 
 ## Index building
-
-```{r}
-index.above.z <- buildAltSpliceIndex(m.above.z, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
-index.above.diff <- buildAltSpliceIndex(m.above.diff, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
-```
-```{r}
-index.below.z <- buildAltSpliceIndex(m.below.z, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
-index.below.diff <- buildAltSpliceIndex(m.below.diff, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
-```
-
-# Add node info and PSI statistics to index@metadata
-## node_list
+### process inputs
 ```{r}
 # Details for all nodes in Whippet
 nodes_info_all <- readRDS("~/nodes_info.rds")
@@ -80,16 +77,65 @@ nodes_info_all <- readRDS("~/nodes_info.rds")
 # Select only the nodes present in index
 gene.nodes <- buildMatrix.node_list(m.above.diff, nodes_info_all)
 
+```
+
+```{r}
+m.above.diff.ordered <- m.above.diff[, order(names(m.above.diff))]
+
+m.above.diff.ordered["primary_type", ] <- colnames(m.above.diff.ordered)
+m.above.diff.ordered["primary_type", ] <- gsub("X3_Ptgs2", "L2/3_Ptgs2",
+                                          m.above.diff.ordered["primary_type", ])
+
+m.above.diff.ordered <- m.above.diff.ordered[, order(m.above.diff.ordered["primary_type", ]), ]
+
+m.above.diff.ordered.selected <- m.above.diff.ordered[which(rownames(m.above.diff.ordered) %in% gene.nodes[!(gene.nodes$Type %in% c("TS", "TE")), "Gene_node"]), ]
+```
+
+
+```{r}
+m.above.diff.ordered.selected.2 <- apply(m.above.diff.ordered.selected, 2,as.numeric)
+rownames(m.above.diff.ordered.selected.2) <- rownames(m.above.diff.ordered.selected)
+
+metadata.ordered <- metadata[order(metadata$pseudo_bulk_ID), ]
+head(m.above.diff.ordered.selected.2)
+head(metadata.ordered)
+```
+
+```{r}
+index.above.z <- buildAltSpliceIndex(m.above.z, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
+```
+
+
+```{r}
+index.above.diff <- buildAltSpliceIndex(m.above.diff.ordered.selected.2
+                                    , metadata = metadata.ordered, 
+                                    dataset.name = "Tasic_2016", 
+                                    column.label = "primary_type")
+```
+
+# Add node info and PSI statistics to index@metadata
+## node_list
+```{r}
+
 # Add node info to index
-index.above.z@metadata$node_list <- gene.nodes
+#index.above.z@metadata$node_list <- gene.nodes
 index.above.diff@metadata$node_list <- gene.nodes
+```
+
+```{r}
+saveObject(index.above.diff, "/lustre/scratch117/cellgen/team218/ys6/index.above.diff.pseudobulk.rds")
+```
+
+```{r}
+index.below.z <- buildAltSpliceIndex(m.below.z, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
+index.below.diff <- buildAltSpliceIndex(m.below.diff, metadata = metadata, dataset.name = "Tasic_2016", column.label = "primary_type")
 ```
 
 
 # Store some useful variables
 ```{r}
-node_list <- scfindGenes(index.above.z)
-cell_types <- cellTypeNames(index.above.z)
+node_list <- scfindGenes(index.above.diff)
+cell_types <- cellTypeNames(index.above.diff)
 ```
 
 # Find the sigature nodes of a cell type
@@ -97,8 +143,105 @@ cell_types <- cellTypeNames(index.above.z)
 ```{r echo=TRUE}
 markers_Ptgs2 <- cellTypeMarkers(index.above.diff, "Tasic_2016.L2/3_Ptgs2")
 markers_Ptgs2
+
+markers_Astro_Gja1 <- cellTypeMarkers(index.above.diff, cell_types[1])
+markers_Astro_Gja1
 ```
 
+```{r}
+
+Markers <- data.frame()
+for (i in seq(1, 49)){
+
+  Markers <- rbind(cellTypeMarkers(index.above.diff, cell_types[i]), Markers)
+}
+
+```
+
+```{r}
+
+Marker_details <-  nodeDetails(index.above.diff, as.character(Markers$genes))
+Markers_with_details <- merge(Markers, Marker_details, by.x = "genes", by.y = "Gene_node")
+library(ggplot2)
+ggplot(Markers_with_details, aes(x=Type)) + geom_histogram(stat = "count")
+Markers.hr <- Markers_with_details[which(Markers_with_details$recall > 0.5), ]
+Markers.hr
+```
+
+# high coverage ones...
+
+# select high coverage nodes
+```{r}
+
+
+m.above.diff.ordered.selected.hc <- m.above.diff.ordered.selected.2[which(rownames(m.above.diff.ordered.selected.2) %in% hc), ]
+
+```
+
+```{r}
+index.above.diff.hc <- buildAltSpliceIndex(m.above.diff.ordered.selected.hc
+                                    , metadata = metadata.ordered, 
+                                    dataset.name = "Tasic_2016", 
+                                    column.label = "primary_type")
+
+gene.nodes.hc <- buildMatrix.node_list(m.above.diff.ordered.selected.hc, nodes_info_all)
+
+index.above.diff.hc@metadata$node_list <- gene.nodes.hc
+
+```
+```{r}
+
+Markers.hc <- data.frame()
+for (i in seq(1, 49)){
+  
+  possible_marker <- cellTypeMarkers(index.above.diff.hc, cell_types[i])
+
+  Markers.hc <- rbind(cellTypeMarkers(index.above.diff.hc, cell_types[i]), Markers.hc)
+}
+Markers.hc
+```
+
+```{r}
+
+Markers_with_details.hc <- nodeDetails(index.above.diff.hc, as.character(Markers.hc$genes))
+
+Markers_with_details.hc.all <- merge(Markers_with_details.hc, Markers.hc, by.x = "Gene_node", by.y = "genes")
+
+library(ggplot2)
+
+ggplot(Markers_with_details.hc.all, aes(x=Type)) + geom_histogram(stat = "count")
+```
+## Select those have precision > 0.5 - present in more than half of pools at least
+
+```{r}
+## none of them have high recall！
+Markers_with_details.hc.all[which(Markers_with_details.hc.all$recall > 0.5), ]
+
+## lots of them have high precision
+high_precision <- Markers_with_details.hc.all[which(Markers_with_details.hc.all$precision > 0.5), ]
+high_precision
+## see who are best
+Markers_with_details.hc.all[order(Markers_with_details.hc.all$f1, Markers_with_details.hc.all$recall, decreasing = TRUE), ]
+```
+
+```{r}
+
+write.table(Markers_with_details.hc.all, "/lustre/scratch117/cellgen/team218/ys6/pseudobulk/markers_with_details_high_coverage.tsv", sep = "\t", quote = FALSE)
+
+```
+
+```{r}
+
+## hc.all limits that node coverage across dataset is > 10
+## 
+ggplot(Markers_with_details, aes(x=precision, y = recall)) + geom_point(alpha = 0.25) + labs(title = "markers without coverage limits")
+
+ggplot(Markers_with_details.hc.all, aes(x=precision, y = recall)) + geom_point(alpha = 0.25) + labs(title = "markers which are limited to coverage across dataset > 20%")
+```
+
+```{r}
+stats <- buildMatrix.stats(mo, m.above.diff.ordered.selected.2) 
+```
 # Lets examine how this pair of adjacent exon
 e.g. Snap25
 ENSMUSG00000027273.13_9
@@ -122,6 +265,16 @@ hyperQueryCellTypesAS(index.above.diff, c("-ENSMUSG00000027273.13_9","ENSMUSG000
 nodeDetails(index.above.z, c("-ENSMUSG00000027273.13_9","ENSMUSG00000027273.13_10"))
 ```
 
+
+```{r}
+query <- geneNodes(index.above.diff, "ENSMUSG00000027273.13", "Gene")$Gene_node
+query
+markerGenes(index.above.diff, as.character(query[1:3]))
+```
+
+markerGenes(index.above.diff, "")
+
+```
 ##Session info for reproducibility
 ```{r}
 sessionInfo()

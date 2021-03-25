@@ -61,6 +61,7 @@ buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.l
       message(paste("\tIndexing", cell.type, "as", new.cell.types[[cell.type]], " with ", length(inds.cell), " cells."))
 
       # now build index
+      ## order psival matrix as you order the metadata
       cell.type.psi.scaled <- psival[,inds.cell]
 
       if(is.matrix(psival))
@@ -202,7 +203,7 @@ setMethod("nodeDetails",
 
 gene.nodes <- function(object, gene.list, query.type){
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
-  if(!query.type%in%c("gene_id", "gene_name", "node_id")) stop("query.type must be \"gene_id\" or \"gene_name\" or \"node_id\"")
+  if(!query.type%in%c("Gene", "external_gene_name", "Gene_node")) stop("query.type must be \"Gene\" or \"external_gene_name\" or \"Gene_node\"")
   node.list <- subset(object@metadata$node_list, as.character(object@metadata$node_list[[query.type]])%in%gene.list, )
   if(nrow(node.list) == 0) stop("No node is found in this index, please change your query")
   return(node.list)
@@ -554,6 +555,7 @@ cell.type.marker <- function(object, cell.types, background.cell.types, top.k, s
     background.cell.types <- cellTypeNames(object)
   }
   all.cell.types <- object@index$cellTypeMarkers(cell.types, background.cell.types)
+  
   if (!(sort.field %in% colnames(all.cell.types)))
   {
     message(paste("Column", sort.field, "not found"))

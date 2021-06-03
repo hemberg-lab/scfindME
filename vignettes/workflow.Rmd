@@ -41,7 +41,6 @@ mo.diff <- scaleMatrix.diff(mo)
 mo.z[1:5, 1:5]
 mo.diff[1:5, 1:5]
 
-# hc <- rownames(mo.diff[which(rowSums(!(is.na(mo.diff))) > 50),])
 ```
 
 ## Build input matrix objects to be further compressed to an index
@@ -119,6 +118,7 @@ index.above.diff <- buildAltSpliceIndex(m.above.diff.ordered.selected.2
 
 # Add node info to index
 #index.above.z@metadata$node_list <- gene.nodes
+gene.nodes <- buildMatrix.node_list(m.above.diff.ordered.selected.2, nodes_info_all)
 index.above.diff@metadata$node_list <- gene.nodes
 ```
 

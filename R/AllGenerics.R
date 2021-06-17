@@ -83,6 +83,15 @@ setGeneric(name = "getCoordinatedNodes",
              
            })
 
+#'
+#' @export
+setGeneric(name = "findMutuallyExclusive",
+           def = function(object)
+           {
+             standardGeneric("findMutuallyExclusive")
+             
+           })
+
 
 #'
 #' @export

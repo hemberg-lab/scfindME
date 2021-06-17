@@ -285,9 +285,47 @@ get_coordinated_nodes <- function(object, gene.name){
 setMethod("getCoordinatedNodes",
           signature(object = "SCFind",
                     gene.name = "character"),
-          definition = getCoordinatedNodes)
+          definition = get_coordinated_nodes)
 
+#' This function finds coordinated node sets for a gene
+#'
+#' @name findMutuallyExclusive
+#' @param object the \code{SCFind} object
+#' @return a dataframe that contains potential mutually exclusive nodes in the index
+#' @importFrom magrittr %>%
+#' @importFrom dplyr unique filter
+#' 
+#' 
+find.mutually.exclusive <- function(object){
+  stats <- object@metadata$stats
+  stats$node_id <- rownames(stats)
+  
+  
+  node.list <- object@metadata$node_list
+  a <- merge(stats, node.list, by.x = "node_id", by.y = "Gene_node", all.x = FALSE, all.y = FALSE) %>% unique() %>% filter(Type == 'CE')
+  
+  b <- data.frame(row.names = a$node_id)
+  d <- data.frame(row.names = a$node_id)
+  
+  for(i in seq(1, nrow(a)-1)){
+    if(0.99 <= (a[i, "mean"]+a[i+1, "mean"]) & 
+       (a[i, "mean"]+a[i+1, "mean"]) <= 1.01 & 
+       abs(a[i, "SD"]- a[i+1, "SD"])<0.01 & 
+       as.numeric(a[i, "Node"]) + 1 == as.numeric(a[i+1, "Node"] )){
+      d <-  rbind(d, a[i, ], a[i+1, ])
+    }
+  }
+  d <- d %>% unique
+  
+  return(d)
+  
+}
 
+#' @rdname findMutuallyExclusive
+#' @aliases findMutuallyExclusive
+setMethod("findMutuallyExclusive",
+          signature(object = "SCFind"),
+          definition = find.mutually.exclusive)
 
 #' Builds an \code{SCFind} object from a \code{SingleCellExperiment} object
 #'

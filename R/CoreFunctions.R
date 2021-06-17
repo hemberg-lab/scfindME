@@ -161,3 +161,8 @@ find.signature <- function(object, cell.type, max.genes=1000, min.cells=10, max.
     }
     return( genes.list )
 }
+
+Mode <- function(x) {
+    ux <- unique(x)
+    ux[which.max(tabulate(match(x, ux)))]
+}

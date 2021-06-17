@@ -265,6 +265,8 @@ setMethod("findNodeSets",
 #' @param object the \code{SCFind} object
 #' @param gene.name external_gene_name of the interested gene
 #' @return a dataframe that contains top queries
+#' @importFrom magrittr %>%
+#' @importFrom dplyr arrange slice_head filter slice_max
 #' 
 get_coordinated_nodes <- function(object, gene.name){
   

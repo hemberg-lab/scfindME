@@ -293,7 +293,7 @@ setMethod("getCoordinatedNodes",
 #' @param object the \code{SCFind} object
 #' @return a dataframe that contains potential mutually exclusive nodes in the index
 #' @importFrom magrittr %>%
-#' @importFrom dplyr unique filter
+#' @importFrom dplyr filter
 #' 
 #' 
 find.mutually.exclusive <- function(object){
@@ -315,7 +315,7 @@ find.mutually.exclusive <- function(object){
       d <-  rbind(d, a[i, ], a[i+1, ])
     }
   }
-  d <- d %>% unique
+  d <- d %>% unique()
   
   return(d)
   

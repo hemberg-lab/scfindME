@@ -75,6 +75,17 @@ setGeneric(name = "findNodeSets",
 
 #'
 #' @export
+setGeneric(name = "getCoordinatedNodes",
+           def = function(object,
+                          gene.name)
+           {
+             standardGeneric("getCoordinatedNodes")
+             
+           })
+
+
+#'
+#' @export
 setGeneric(name = "buildCellTypeIndex",
            def = function(sce,
                           dataset.name = '',

@@ -258,6 +258,35 @@ setMethod("findNodeSets",
                     query.type = "character"),
           definition = gene.node.sets)
 
+
+#' This function finds coordinated node sets for a gene
+#'
+#' @name getCoordinatedNodes
+#' @param object the \code{SCFind} object
+#' @param gene.name external_gene_name of the interested gene
+#' @return a dataframe that contains top queries
+#' 
+get_coordinated_nodes <- function(object, gene.name){
+  
+  query <- markerGenes(object, geneNodes(above, gene.name, 
+                                        query.type = "external_gene_name")$Gene_node) %>% 
+    arrange(desc(Cells, tfidf)) %>% 
+    slice_head(n = 30) %>%
+    filter(Cells == Mode(Cells)) %>% 
+    slice_max(Genes, n = 5)
+  
+  return(query)
+}
+
+#' @rdname getCoordinatedNodes
+#' @aliases getCoordinatedNodes
+setMethod("getCoordinatedNodes",
+          signature(object = "SCFind",
+                    gene.name = "character"),
+          definition = getCoordinatedNodes)
+
+
+
 #' Builds an \code{SCFind} object from a \code{SingleCellExperiment} object
 #'
 #' This function will index a \code{SingleCellExperiment} as an SCFind index.

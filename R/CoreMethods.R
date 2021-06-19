@@ -138,7 +138,7 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
       return("Exit query")
     }
   }  else {
-    if(!all(node.list.2%in%as.character(object@metadata$node_list[["Gene_node"]]))){
+    if(!all(node.list.2%in%scfindGenes(object))){
       stop("Query nodes not in index, please change your query")
     }
     else {

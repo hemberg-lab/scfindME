@@ -148,17 +148,16 @@ saveRDS(matrix_below, paste(OUTPUT, "/", NAME, "_matrix_below.rds", sep = ""))
 print("Finish scaled matrix building")
 
 buildMatrix.stats <- function(matrix.original, matrix.scaled){
-  df <- data.frame(matrix.original, row.names = matrix.original$Gene_node)
-  dm <- as.matrix(df[, -1])
-  matrix.original <- dm
+  df <- data.frame(matrix.original, row.names = rownames(matrix.original))
+  dm <- as.matrix(df)
   # create @metadata$stats
   # calculate node means and SD value and store in index
   message("calculating mean PSI across dataset...")
   
-  mean <- transform(matrix.original, mean=apply(matrix.original, 1, mean, na.rm = TRUE))
+  mean <- transform(dm, mean=apply(dm, 1, mean, na.rm = TRUE))
   
   message("calculating SD...")
-  sd <- transform(matrix.original, SD=apply(matrix.original, 1, sd, na.rm = TRUE))
+  sd <- transform(dm, SD=apply(dm, 1, sd, na.rm = TRUE))
   
   mean$SD <- sd$SD
   mean <- mean[order(mean$SD), ]

@@ -29,7 +29,7 @@ metadata <- readRDS("/lustre/scratch117/cellgen/team218/ys6/pseudobulk_meta.rds"
 metadata[1:5, ]
 ```
 ```{r select high coverage}
-hc <- rownames(mo[which(rowSums(!(is.na(mo))) > 50),])
+hc <- rownames(mo[which(rowSums((is.na(mo))) < 0.95*339),])
 mo <- mo[hc, ]
 ```
 

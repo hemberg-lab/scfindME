@@ -308,9 +308,9 @@ find.mutually.exclusive <- function(object){
   d <- data.frame(row.names = a$node_id)
   
   for(i in seq(1, nrow(a)-1)){
-    if(0.99 <= (a[i, "mean"]+a[i+1, "mean"]) & 
-       (a[i, "mean"]+a[i+1, "mean"]) <= 1.01 & 
-       abs(a[i, "SD"]- a[i+1, "SD"])<0.01 & 
+    if(0.95 <= (a[i, "mean"]+a[i+1, "mean"]) & 
+       (a[i, "mean"]+a[i+1, "mean"]) <= 1.05 & 
+       abs(a[i, "SD"]- a[i+1, "SD"])<0.05 & 
        as.numeric(a[i, "Node"]) + 1 == as.numeric(a[i+1, "Node"] )){
       d <-  rbind(d, a[i, ], a[i+1, ])
     }

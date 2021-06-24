@@ -11,7 +11,9 @@ option_list <- list(
     make_option(c("-o", "--output"), type = "character", default=NULL,
         help="Directory where multiple output RDS file will be written"),
     make_option(c("-r", "--num_reads_min"), type = "numeric", default=10,
-        help="Minimum number of total reads covering node, which will be included in the output. This is for ensure meaningful psi quantification, default = 10")
+        help="Minimum number of total reads covering node, which will be included in the output. This is for ensure meaningful psi quantification, default = 10"),
+    make_option(c("-d", "--psi_diff_cutoff"), type = "numeric", default=0.2,
+        help="Minimum PSI difference from dataset average which will lead to the node being kept in the index, default = 0.2")
     )
 
 # parse input
@@ -21,6 +23,7 @@ NAME=opt$data_name
 INPUT=opt$pseudobulk_psi
 OUTPUT=opt$output
 NUM_READS_MIN=opt$num_reads_min
+PSI_DIFF_CUTOFF=opt$psi_diff_cutoff
 
 ########################
 ##
@@ -72,7 +75,7 @@ print("Finish original matrix building")
 
 
 # scale matrix to get contrast
-scaleMatrix.diff <- function(matrix.original){
+scaleMatrix.diff <- function(matrix.original, psi.diff.cutoff){
   df <- data.frame(matrix.original, row.names = matrix.original$Gene_node)
   dm <- as.matrix(df[, -1])
   head(dm)
@@ -92,7 +95,7 @@ scaleMatrix.diff <- function(matrix.original){
   
   for (cell in seq(1, ncol(matrix.scaled_diff))){
     tv <- matrix.scaled_diff[, cell]
-    temp <- which(abs(tv) < 20)
+    temp <- which(abs(tv) < psi.diff.cutoff*100)
     tv[temp] = NA
     matrix.scaled_diff_selected[[colnames(matrix.scaled_diff)[cell]]] <- tv
   }
@@ -137,7 +140,7 @@ buildMatrix.below <- function(matrix.scaled){
   return(matrix.below)
 }
 
-matrix_scaled <- scaleMatrix.diff(matrix_original)
+matrix_scaled <- scaleMatrix.diff(matrix_original, PSI_DIFF_CUTOFF)
 matrix_above <- buildMatrix.above(matrix_scaled)
 matrix_below <- buildMatrix.below(matrix_scaled)
 

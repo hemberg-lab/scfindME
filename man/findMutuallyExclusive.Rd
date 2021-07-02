@@ -3,15 +3,17 @@
 \name{findMutuallyExclusive}
 \alias{findMutuallyExclusive}
 \alias{find.mutually.exclusive}
-\alias{findMutuallyExclusive,SCFind-method}
+\alias{findMutuallyExclusive,SCFind,character-method}
 \title{This function finds coordinated node sets for a gene}
 \usage{
-find.mutually.exclusive(object)
+find.mutually.exclusive(object, node.types)
 
-\S4method{findMutuallyExclusive}{SCFind}(object)
+\S4method{findMutuallyExclusive}{SCFind,character}(object, node.types)
 }
 \arguments{
 \item{object}{the \code{SCFind} object}
+
+\item{node.types}{the types of nodes to find mutually exclisive events in}
 }
 \value{
 a dataframe that contains potential mutually exclusive nodes in the index

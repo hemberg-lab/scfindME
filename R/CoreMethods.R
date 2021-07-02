@@ -222,17 +222,21 @@ setMethod("geneNodes",
 #' @name findNodeSets
 #' @param object the \code{SCFind} object
 #' @param gene.list gene id or gene name to find coordinated node sets
-#' @param query.type either "gene_id" or "gene_name" to use in query
+#' @param query.type either "gene_id" or "external_gene_name" to use in query
 #' @return a dataframe that contains nodes for gene.list
 
 gene.node.sets <- function(object, gene.list, query.type){
+  
   nodes <- gene.nodes(object, gene.list, query.type)
-  nodes.new <- nodes[which(as.character(nodes$type) == "CE" | 
-                       as.character(nodes$type) == "AA"  |
-                       as.character(nodes$type) == "AD"  |
-                       as.character(nodes$type) == "RI"), ]
+  nodes.new <- nodes[which(as.character(nodes$Type) %in% c("CE", "RI")), ]
+    
   if(nrow(nodes.new) != 0) {nodes <- nodes.new}
-  markers <- find.marker.genes(object, as.character(nodes$node_id))
+    
+    else {
+        warning("there is no CE or RI node in this gene, please change query")
+    }
+  
+  markers <- find.marker.genes(object, as.character(nodes$Gene_node))
   if(nrow(markers) == 0) stop("No gene pattern is found")
   sets <- data.frame()
 
@@ -270,7 +274,7 @@ setMethod("findNodeSets",
 #' 
 get_coordinated_nodes <- function(object, gene.name){
   
-  query <- markerGenes(object, geneNodes(above, gene.name, 
+  query <- markerGenes(object, geneNodes(object, gene.name, 
                                         query.type = "external_gene_name")$Gene_node) %>% 
     arrange(desc(Cells, tfidf)) %>% 
     slice_head(n = 30) %>%
@@ -291,18 +295,22 @@ setMethod("getCoordinatedNodes",
 #'
 #' @name findMutuallyExclusive
 #' @param object the \code{SCFind} object
+#' @param node.types the types of nodes to find mutually exclisive events in
 #' @return a dataframe that contains potential mutually exclusive nodes in the index
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
 #' 
 #' 
-find.mutually.exclusive <- function(object){
+find.mutually.exclusive <- function(object, node.types){
   stats <- object@metadata$stats
   stats$node_id <- rownames(stats)
   
   
   node.list <- object@metadata$node_list
-  a <- merge(stats, node.list, by.x = "node_id", by.y = "Gene_node", all.x = FALSE, all.y = FALSE) %>% unique() %>% filter(Type == 'CE')
+  a <- merge(stats, node.list, by.x = "node_id", 
+             by.y = "Gene_node", 
+             all.x = FALSE, 
+             all.y = FALSE) %>% unique() %>% filter(Type %in% node.types )
   
   b <- data.frame(row.names = a$node_id)
   d <- data.frame(row.names = a$node_id)
@@ -324,8 +332,66 @@ find.mutually.exclusive <- function(object){
 #' @rdname findMutuallyExclusive
 #' @aliases findMutuallyExclusive
 setMethod("findMutuallyExclusive",
-          signature(object = "SCFind"),
+          signature(object = "SCFind", 
+                    node.types = "character"),
           definition = find.mutually.exclusive)
+
+
+#' This function gets the raw PSI of a node in a cell type
+#'
+#' @name getRawPsi
+#' @param object the \code{SCFind} object
+#' @param gene.list several nodes that we wish to get the raw PSI
+#' @param cell.type cell type tp query, can only query one cell type at once
+#' @param index.type above or below to indicate the type of splicing index
+#' @return a dataframe that contains raw psi value in the queried cell type of the gene.list
+#' 
+#' 
+
+get.raw.psi <- function(object, gene.list, cell.type, index.type){
+    
+    if(!(index.type %in% c("above", "below"))){
+        
+        warning("index.type should be either above or below")
+    }
+    
+    if(length(cell.type) != 1){
+        
+        warning("can only query one cell type at once")
+    }
+    
+    
+    cells_psi <- object@index$getCellTypeExpression(cell.type)
+    
+    scaled_psi <- cells_psi[which(rownames(cells_psi) %in% gene.list), ]
+    
+    mean <- object@metadata$stats[which(rownames(object@metadata$stats) %in% gene.list), 'mean']
+    
+    
+    if(index.type == "above"){
+        raw_psi <- scaled_psi * 0.01 + mean
+        
+    }
+    else if(index.type == 'below'){
+        raw_psi <- mean - scaled_psi * 0.01 
+        
+    }
+        
+    raw_psi[which(raw_psi > 1)] <- 1
+    raw_psi[which(raw_psi < 0)] <- 
+    
+    return(raw_psi)
+    
+}
+    
+#' @rdname getRawPsi
+#' @aliases getRawPsi
+setMethod("getRawPsi",
+          signature(object = "SCFind", 
+                     gene.list = "character",
+                    cell.type = "character",
+                    index.type = "character"),
+          definition = get.raw.psi)
 
 #' Builds an \code{SCFind} object from a \code{SingleCellExperiment} object
 #'

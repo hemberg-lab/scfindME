@@ -86,12 +86,24 @@ setGeneric(name = "getCoordinatedNodes",
 #'
 #' @export
 setGeneric(name = "findMutuallyExclusive",
-           def = function(object)
+           def = function(object, 
+                          node.types)
            {
              standardGeneric("findMutuallyExclusive")
              
            })
 
+#'
+#' @export
+setGeneric(name = "getRawPsi",
+          def = function(object, 
+                     gene.list,
+                    cell.type ,
+                    index.type)
+          {
+             standardGeneric("getRawPsi")
+             
+           })
 
 #'
 #' @export

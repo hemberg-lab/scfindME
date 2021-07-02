@@ -15,7 +15,7 @@ gene.node.sets(object, gene.list, query.type)
 
 \item{gene.list}{gene id or gene name to find coordinated node sets}
 
-\item{query.type}{either "gene_id" or "gene_name" to use in query}
+\item{query.type}{either "gene_id" or "external_gene_name" to use in query}
 }
 \value{
 a dataframe that contains nodes for gene.list

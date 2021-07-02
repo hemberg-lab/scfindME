@@ -243,7 +243,8 @@ gene.node.sets <- function(object, gene.list, query.type){
   query <- strsplit(as.character(markers[which.max(markers$tfidf), "Query"]), ",")[[1]]
   result <- cell.types.phyper.test(object, query)
     
-    print(paste("running hyperQueryCellTypeAS using query ", query, sep = ""))
+    print("running hyperQueryCellTypeAS using")
+    print(query)
     print(result)
     
     
@@ -319,7 +320,7 @@ find.mutually.exclusive <- function(object, node.types){
   a <- merge(stats, node.list, by.x = "node_id", 
              by.y = "Gene_node", 
              all.x = FALSE, 
-             all.y = FALSE) %>% unique() %>% filter(Type %in% node.types )
+             all.y = FALSE) %>% unique() %>% filter(Type %in% node.types)
   
   b <- data.frame(row.names = a$node_id)
   d <- data.frame(row.names = a$node_id)
@@ -329,9 +330,20 @@ find.mutually.exclusive <- function(object, node.types){
        (a[i, "mean"]+a[i+1, "mean"]) <= 1.05 & 
        abs(a[i, "SD"]- a[i+1, "SD"])<0.05 & 
        as.numeric(a[i, "Node"]) + 1 == as.numeric(a[i+1, "Node"] )){
-      d <-  rbind(d, a[i, ], a[i+1, ])
+        
+        candidate <- c(a[i, 'node_id'], a[i+1, "node_id"])
+        
+        if(all(candidate%in%scfindGenes(object))){
+        
+        
+        if(sum(hyperQueryCellTypesAS(object, candidate)$pval < 0.1) == 0){
+            
+            d <-  rbind(d, a[i, ], a[i+1, ])
+            
+        }
     }
   }
+}
   d <- d %>% unique()
   
   return(d)

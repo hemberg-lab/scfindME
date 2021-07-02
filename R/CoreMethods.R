@@ -242,13 +242,22 @@ gene.node.sets <- function(object, gene.list, query.type){
 
   query <- strsplit(as.character(markers[which.max(markers$tfidf), "Query"]), ",")[[1]]
   result <- cell.types.phyper.test(object, query)
+    
+    print(paste("running hyperQueryCellTypeAS using query ", query, sep = ""))
+    print(result)
+    
+    
     for (j in seq(1, nrow(result))){
       if(result$pval[[j]] <= 0.05){
-        print("find a node set\n")
+        print("find a cell type specific node set\n")
         print(query)
         sets <- rbind(sets, result[j, ])
       }
   }
+    
+    if(nrow(sets) == 0){
+        message("This query is not cell type specific")
+    }
   
   return(sets)
 }

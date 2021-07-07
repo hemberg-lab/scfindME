@@ -336,7 +336,9 @@ find.mutually.exclusive <- function(object, node.types){
         if(all(candidate%in%scfindGenes(object))){
         
         
-        if(sum(hyperQueryCellTypesAS(object, candidate)$pval < 0.1) == 0){
+        if(sum(hyperQueryCellTypesAS(object, candidate)$pval < 0.1) == 0)
+        
+        {
             
             d <-  rbind(d, a[i, ], a[i+1, ])
             

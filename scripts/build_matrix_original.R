@@ -1,4 +1,4 @@
-#!/bin/R
+#!/usr/bin/R
 
 library(optparse)
 library(tidyverse)

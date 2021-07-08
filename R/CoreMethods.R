@@ -142,7 +142,7 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
       stop("Query nodes not in index, please change your query")
     }
     else {
-      message("Verified all query nodes are in index, generating results...")
+      #message("Verified all query nodes are in index, generating results...")
       continue = TRUE
     }
   }
@@ -154,7 +154,7 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
     }
     else
     {
-      message("No Cell Is Found!")
+      #message("No Cell Is Found!")
       return(data.frame(cell_type = c(), cell_hits = c(), total_cells = c(), pval = c()))
     }
   }
@@ -381,27 +381,42 @@ get.raw.psi <- function(object, gene.list, cell.type, index.type){
     if(length(cell.type) != 1){
         
         warning("can only query one cell type at once")
+        
     }
     
     
-    cells_psi <- object@index$getCellTypeExpression(cell.type)
+    cells_psi <- as.data.frame(object@index$getCellTypeExpression(cell.type))
     
     scaled_psi <- cells_psi[which(rownames(cells_psi) %in% gene.list), ]
     
+    #print(dim(scaled_psi))
+    
     mean <- object@metadata$stats[which(rownames(object@metadata$stats) %in% gene.list), 'mean']
     
+    if(nrow(scaled_psi) == 0 ){
+        
+        #warning("This cell type does not have PSI quantification of the queried nodes")
+        return(NA)
+    }
     
     if(index.type == "above"){
         raw_psi <- scaled_psi * 0.01 + mean
         
-    }
-    else if(index.type == 'below'){
-        raw_psi <- mean - scaled_psi * 0.01 
+    }else{
+        raw_psi <- mean - scaled_psi * 0.01
         
     }
+    
+    raw_psi[raw_psi > 1] <- 1
+    raw_psi[raw_psi < 0] <- 0
+    
+    # when some nodes does not present in a cell type, add NAs
+    if(nrow(raw_psi) != length(gene.list)){
         
-    raw_psi[which(raw_psi > 1)] <- 1
-    raw_psi[which(raw_psi < 0)] <- 
+        na_nodes <- gene.list[which(!(gene.list %in% rownames(raw_psi)))]
+        #print(na_nodes)
+        raw_psi[na_nodes, ] <- NA
+    }
     
     return(raw_psi)
     

@@ -274,8 +274,8 @@ gene.node.sets <- function(object, gene.list, query.type, node.types){
 setMethod("findNodeSets",
           signature(object = "SCFind",
                     gene.list = "character",
-                    query.type = "character"
-                   node.types = "character"),
+                    query.type = "character",
+                    node.types = "character"),
           definition = gene.node.sets)
 
 

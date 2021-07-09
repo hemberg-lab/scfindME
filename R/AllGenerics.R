@@ -66,7 +66,8 @@ setGeneric(name = "geneNodes",
 setGeneric(name = "findNodeSets",
            def = function(object,
                           gene.list,
-                          query.type)
+                          query.type,
+                          node.types)
            {
              standardGeneric("findNodeSets")
              

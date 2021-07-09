@@ -238,6 +238,7 @@ gene.node.sets <- function(object, gene.list, query.type){
     
     else {
         warning("there is no CE or RI node in this gene, please change query")
+        return(NA)
     }
   
   markers <- find.marker.genes(object, as.character(nodes$Gene_node))

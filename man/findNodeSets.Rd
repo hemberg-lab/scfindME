@@ -3,12 +3,12 @@
 \name{findNodeSets}
 \alias{findNodeSets}
 \alias{gene.node.sets}
-\alias{findNodeSets,SCFind,character,character-method}
+\alias{findNodeSets,SCFind,character,character,character-method}
 \title{This function finds coordinated node sets for a gene}
 \usage{
-gene.node.sets(object, gene.list, query.type)
+gene.node.sets(object, gene.list, query.type, node.types)
 
-\S4method{findNodeSets}{SCFind,character,character}(object, gene.list, query.type)
+\S4method{findNodeSets}{SCFind,character,character,character}(object, gene.list, query.type, node.types)
 }
 \arguments{
 \item{object}{the \code{SCFind} object}
@@ -16,6 +16,8 @@ gene.node.sets(object, gene.list, query.type)
 \item{gene.list}{gene id or gene name to find coordinated node sets}
 
 \item{query.type}{either "gene_id" or "external_gene_name" to use in query}
+
+\item{node.types}{types of splicing nodes to consider in the gene.list}
 }
 \value{
 a dataframe that contains nodes for gene.list

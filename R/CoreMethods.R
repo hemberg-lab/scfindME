@@ -227,6 +227,7 @@ setMethod("geneNodes",
 #' @param object the \code{SCFind} object
 #' @param gene.list gene id or gene name to find coordinated node sets
 #' @param query.type either "gene_id" or "external_gene_name" to use in query
+#' @param node.types types of splicing nodes to consider in the gene.list
 #' @return a dataframe that contains nodes for gene.list
 
 gene.node.sets <- function(object, gene.list, query.type, node.types){

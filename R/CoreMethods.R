@@ -181,7 +181,11 @@ node.details <- function(object, node.list){
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
 
   details <- object@metadata$node_list[which(as.character(object@metadata$node_list[["Gene_node"]])%in%node.list),]
-  return(details)
+    
+  details_ordered <- details[match(node.list, details$Gene_node),]
+    
+    
+  return(details_ordered)
 
 }
 

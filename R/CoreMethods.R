@@ -229,15 +229,15 @@ setMethod("geneNodes",
 #' @param query.type either "gene_id" or "external_gene_name" to use in query
 #' @return a dataframe that contains nodes for gene.list
 
-gene.node.sets <- function(object, gene.list, query.type){
+gene.node.sets <- function(object, gene.list, query.type, node.types){
   
   nodes <- gene.nodes(object, gene.list, query.type)
-  nodes.new <- nodes[which(as.character(nodes$Type) %in% c("CE", "RI")), ]
+  nodes.new <- nodes[which(as.character(nodes$Type) %in% node.types), ]
     
   if(nrow(nodes.new) != 0) {nodes <- nodes.new}
     
     else {
-        warning("there is no CE or RI node in this gene, please change query")
+        warning(paste("there is no ", node.types, " node in this gene, please change query", sep = ""))
         return(NA)
     }
   
@@ -274,7 +274,8 @@ gene.node.sets <- function(object, gene.list, query.type){
 setMethod("findNodeSets",
           signature(object = "SCFind",
                     gene.list = "character",
-                    query.type = "character"),
+                    query.type = "character"
+                   node.types = "character"),
           definition = gene.node.sets)
 
 

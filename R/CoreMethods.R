@@ -438,6 +438,124 @@ setMethod("getRawPsi",
                     index.type = "character"),
           definition = get.raw.psi)
 
+
+
+
+
+
+
+#' This function plots correlation of splicing PSI and return significantly correlated nodes
+#'
+#' @name plotRawPsiCorr
+#' @param raw_psi raw psi matrx, each row is a gene, each col is a cell
+#' @param node.list node list whose PSI is to be plotted, default 'all_nodes' 
+#' @param cell.types cell types to consider, default 'all_cell_types'
+#' @importFrom Hmisc rcorr
+#' @return a list object with heatmap, pos corr and neg corr
+#' 
+
+plot.raw.psi.corr <- function(raw_psi, node.list = 'all_nodes', cell.types = 'all_cell_types'){
+    
+    # in raw_psi, each row is a node, each col is a cell type
+    # we need cor among nodes, so transform
+    
+    if(node.list == 'all_nodes') node.list <- rownames(raw_psi)
+    
+    if(cell.types == 'all_cell_types') cell.types <- colnames(raw_psi)
+    
+    raw_psi <- raw_psi[which(rownames(raw_psi) %in% node.list), which(colnames(raw_psi) %in% cell.types)]
+    
+    
+    if(nrow(raw_psi) == 0 | ncol(raw_psi) == 0){
+        
+        warning("No value to plot, please change query")
+        return(NA)
+        
+    }
+    
+    corr <- cor(t(raw_psi), method = 'pearson', use = "pairwise.complete.obs")
+    
+    
+    corr[which(is.na(corr))] <- 0
+    
+    
+    # Reorder the correlation matrix
+    cormat <- reorder_cormat(corr)
+    upper_tri <- get_upper_tri(cormat)
+
+    # Melt the correlation matrix
+    melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+    labels <- melted_cormat$Var1
+
+    # Create a ggheatmap
+    ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+     geom_tile(color = "white")+
+     scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+        midpoint = 0, limit = c(-1,1), space = "Lab", 
+        name="Pearson\nCorrelation") +
+        theme_minimal()+ # minimal theme
+        theme(axis.title = element_text(size = 12), 
+              axis.text.x = element_text(angle = 90, vjust = 0.5, size = 10, hjust = 0.5), 
+              axis.text.y = element_text(size = 10))+
+        coord_fixed() + 
+        scale_x_discrete(breaks=melted_cormat$Var1, 
+                         labels=as.character(melted_cormat$Var1)) + 
+    labs(title = 'PSI correlation of query nodes using query cell types', x = 'Gene_node', y = 'Gene_node')
+
+# Print the heatmap
+# Takes a while
+print(ggheatmap)
+    
+    # get pos and neg correlated nodes
+    melted_cormat$Var1 <- as.character(melted_cormat$Var1)
+    melted_cormat$Var2 <- as.character(melted_cormat$Var2)
+    
+    
+    pos_corr <- melted_cormat[which(melted_cormat$value>0.5 & melted_cormat$value<1), ]
+    
+    neg_corr <- melted_cormat[which(melted_cormat$value< (-0.5)), ]
+    
+    # test the significance of correlation
+    # library(Hmisc)
+    res <- suppressWarnings(Hmisc::rcorr(as.matrix(t(raw_psi))))
+    
+    round_p <- round(res$P, 3)
+    
+    round_p <- get_upper_tri(round_p)
+    
+    melted_p <- melt(round_p, na.rm = TRUE)
+    
+    sig <- melted_p[which(melted_p$value < 0.05), ]
+    
+    #print(levels(sig$Var1))
+    
+    pos_sig <- pos_corr[which(pos_corr$Var1 %in% levels(sig$Var1)), ]
+    message("significantly positively correlated nodes :")
+    print(pos_sig)
+    
+    neg_sig <- neg_corr[which(neg_corr$Var1 %in% levels(sig$Var1)), ]
+    
+    message("significantly negatively correlated nodes :")
+    print(neg_sig)
+    
+    final <- list('heatmap' = ggheatmap, 'sig_pos_corr' = pos_sig, 'sig_neg_corr' = neg_sig)
+    return(final)
+    
+}
+
+
+
+#' @rdname plotRawPsiCorr
+#' @aliases plotRawPsiCorr
+setMethod("plotRawPsiCorr",
+          signature(raw_psi = 'data.frame',
+                    node.list = 'character',
+                    cell.types = 'character'),
+          definition = plot.raw.psi.corr)
+
+
+
 #' Builds an \code{SCFind} object from a \code{SingleCellExperiment} object
 #'
 #' This function will index a \code{SingleCellExperiment} as an SCFind index.

@@ -106,6 +106,18 @@ setGeneric(name = "getRawPsi",
              
            })
 
+
+#'
+#' @export
+setGeneric(name = "plotRawPsiCorr",
+          def = function(raw_psi, 
+                     node.list,
+                    cell.types)
+          {
+             standardGeneric("plotRawPsiCorr")
+             
+           })
+
 #'
 #' @export
 setGeneric(name = "buildCellTypeIndex",

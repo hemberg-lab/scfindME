@@ -402,7 +402,7 @@ get.raw.psi <- function(object, gene.list, cell.type, index.type){
     
     if(nrow(scaled_psi) == 0 ){
         
-        #warning("This cell type does not have PSI quantification of the queried nodes")
+        warning(paste(cell.type, " does not have PSI quantification of the queried nodes", sep = ""))
         return(NA)
     }
     

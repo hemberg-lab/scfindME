@@ -45,7 +45,7 @@ for (gene in all_genes){
                            
     details <- nodeDetails(index, tbl$Gene_node)
                            
-    tbl <- merge(tbl, details, by = 'Gene_node') %>% arrange(node_num) %>% filter(Type %in% c("CE", "RI"))
+    tbl <- merge(tbl, details, by = 'Gene_node') %>% arrange(node_num) %>% filter(Type %in% c("CE", "RI", "AA", "AD"))
     
     new_block <- data.frame()
     block_num <- 1

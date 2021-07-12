@@ -166,3 +166,40 @@ Mode <- function(x) {
     ux <- unique(x)
     ux[which.max(tabulate(match(x, ux)))]
 }
+
+
+
+#' reorder correlation matrix 
+#'
+#' @param cormat correlation matrix
+#'
+#' @import reshape2
+#'
+reorder_cormat <- function(cormat){
+# Use correlation between variables as distance
+dd <- as.dist((1-cormat)/2)
+hc <- hclust(dd)
+cormat <- cormat[hc$order, hc$order]
+}
+
+#' Get lower triangle of the correlation matrix
+#'
+#' @param cormat correlation matrix
+#'
+#' @import reshape2
+#'
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+
+#' # Get upper triangle of the correlation matrix
+#'
+#' @param cormat correlation matrix
+#'
+#' @import reshape2
+#'
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }

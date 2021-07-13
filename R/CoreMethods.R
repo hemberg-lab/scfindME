@@ -202,14 +202,17 @@ setMethod("nodeDetails",
 #' @name geneNodes
 #' @param object the \code{SCFind} object
 #' @param gene.list gene id or gene name list to find nodes
-#' @param query.type either "gene_id" or "gene_name" to use in query
+#' @param query.type either "Gene", "external_gene_name", "Gene_node" to use in query
 #' @return a dataframe that contains nodes for gene.list
 
 gene.nodes <- function(object, gene.list, query.type){
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
   if(!query.type%in%c("Gene", "external_gene_name", "Gene_node")) stop("query.type must be \"Gene\" or \"external_gene_name\" or \"Gene_node\"")
   node.list <- subset(object@metadata$node_list, as.character(object@metadata$node_list[[query.type]])%in%gene.list, )
-  if(nrow(node.list) == 0) stop("No node is found in this index, please change your query")
+  if(nrow(node.list) == 0) {
+      warning("No node is found in this index, please change your query")
+      return(data.frame())
+      }
   return(node.list)
 }
 
@@ -564,6 +567,7 @@ setMethod("plotRawPsiCorr",
 #' @param node.list a list of nodes whose raw psi is to be plotted
 #' @param cell.types a list of cell types whose raw psi is to be plotted
 #' @param index.type above or below as the type of the input index
+#' @return a heatmap ggplot object
 #' @importFrom magrittr %>%
 #' @importFrom dplyr arrange mutate
 #' @importFrom tidyr pivot_longer 
@@ -583,7 +587,7 @@ plot.raw.psi.heatmap <- function(object, node.list, cell.types, index.type){
     
     #print(cell_type)
     
-    raw_psi_new <- data.frame(rowMeans(getRawPsi(tasic, gene_nodes_all, cell_type, index.type)))
+    raw_psi_new <- data.frame(getRawPsi(tasic, gene_nodes_all, cell_type, index.type))
     
     if(!all(is.na(raw_psi_new))){
 
@@ -612,11 +616,11 @@ plot.raw.psi.heatmap <- function(object, node.list, cell.types, index.type){
                                  hjust = 0.5)) + 
     labs(title = 'Raw PSI value for query nodes',
         x = 'node_num',
-        y = 'cell_type') #+ scale_x_discrete(guide = guide_axis(n.dodge = 2))
+        y = 'cell_type') + scale_y_discrete(guide = guide_axis(n.dodge = 2))
 
-    options(repr.plot.width=15 ,repr.plot.height=8)
+    options(repr.plot.width=15 ,repr.plot.height=15)
     
-    print(ggheatmap)
+    return(ggheatmap)
     
 }
 

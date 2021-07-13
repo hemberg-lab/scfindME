@@ -78,4 +78,4 @@ for (gene in all_genes){
     
                                    
     
-saveRDS(all_blocks, paste(outout, name, "all_node_blocks.rds", sep = "_"))
+saveRDS(all_blocks, paste(output, name, "all_node_blocks.rds", sep = "_"))

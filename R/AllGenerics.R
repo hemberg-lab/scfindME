@@ -118,6 +118,21 @@ setGeneric(name = "plotRawPsiCorr",
              
            })
 
+
+#'
+#' @export
+setGeneric(name = "plotRawPsiHeatmap",
+            def = function(object,
+                    node.list,
+                    cell.types ,
+                    index.type)          
+            {
+             standardGeneric("plotRawPsiHeatmap")
+             
+           })
+
+
+
 #'
 #' @export
 setGeneric(name = "buildCellTypeIndex",

@@ -442,8 +442,6 @@ setMethod("getRawPsi",
 
 
 
-
-
 #' This function plots correlation of splicing PSI and return significantly correlated nodes
 #'
 #' @name plotRawPsiCorr
@@ -451,6 +449,7 @@ setMethod("getRawPsi",
 #' @param node.list node list whose PSI is to be plotted, default 'all_nodes' 
 #' @param cell.types cell types to consider, default 'all_cell_types'
 #' @importFrom Hmisc rcorr
+#' @import ggplot2
 #' @return a list object with heatmap, pos corr and neg corr
 #' 
 
@@ -553,6 +552,82 @@ setMethod("plotRawPsiCorr",
                     node.list = 'character',
                     cell.types = 'character'),
           definition = plot.raw.psi.corr)
+
+
+
+
+
+#' This function plots heatmap of PSI values
+#'
+#' @name plotRawPsiHeatmap
+#' @param object the \code{SCFind} object
+#' @param node.list a list of nodes whose raw psi is to be plotted
+#' @param cell.types a list of cell types whose raw psi is to be plotted
+#' @param index.type above or below as the type of the input index
+#' @importFrom magrittr %>%
+#' @importFrom dplyr arrange mutate
+#' @importFrom tidyr pivot_longer 
+#' @importFrom tibble rownames_to_column
+#' @importFrom forcats fct_inorder
+
+plot.raw.psi.heatmap <- function(object, node.list, cell.types, index.type){
+    
+    
+    cell_types_all <- cell.types
+    
+    gene_nodes_all <- node.list
+    # build raw psi matrix for tasic input
+    raw_psi <- data.frame()
+
+   for(cell_type in cell_types_all){
+    
+    #print(cell_type)
+    
+    raw_psi_new <- data.frame(rowMeans(getRawPsi(tasic, gene_nodes_all, cell_type, index.type)))
+    
+    if(!all(is.na(raw_psi_new))){
+
+    colnames(raw_psi_new) <- paste(cell_type, seq(1, ncol(raw_psi_new)), sep = "_")
+        
+        raw_psi_add <- raw_psi_new %>% rownames_to_column("node_num") %>%
+        pivot_longer(cols = -c(node_num), names_to = 'cell_type_num', values_to = "raw_psi")
+        
+        if(nrow(raw_psi) == 0){
+            raw_psi <- raw_psi_add
+        } else {
+            raw_psi <- rbind(raw_psi, raw_psi_add)
+        }
+        
+    }
+    
+}
+    
+    ggheatmap <- raw_psi %>% 
+    arrange(node_num) %>% mutate(node_num = factor(node_num)) %>%
+    ggplot(aes(x = forcats::fct_inorder(node_num), y = cell_type_num, fill = raw_psi)) + 
+    geom_tile()  +
+      theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, 
+                                     vjust = 0.5, 
+                                 hjust = 0.5)) + 
+    labs(title = 'Raw PSI value for query nodes',
+        x = 'node_num',
+        y = 'cell_type') #+ scale_x_discrete(guide = guide_axis(n.dodge = 2))
+
+    options(repr.plot.width=15 ,repr.plot.height=8)
+    
+    print(ggheatmap)
+    
+}
+
+#' @rdname plotRawPsiHeatmap
+#' @aliases plotRawPsiHeatmap
+setMethod("plotRawPsiHeatmap",
+                    signature(object = 'SCFind',
+                    node.list = 'character',
+                    cell.types = 'character',
+                   index.type = 'character'),
+          definition = plot.raw.psi.heatmap)
 
 
 

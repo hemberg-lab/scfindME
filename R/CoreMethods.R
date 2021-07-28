@@ -420,7 +420,7 @@ get.raw.psi <- function(object, gene.list, cell.type, index.type){
     raw_psi[raw_psi > 1] <- 1
     raw_psi[raw_psi < 0] <- 0
     
-    # when some nodes does not present in a cell type, add NAs
+    # when some nodes does not present in a cell type, add NAs to return a complete dataframe
     if(nrow(raw_psi) != length(gene.list)){
         
         na_nodes <- gene.list[which(!(gene.list %in% rownames(raw_psi)))]
@@ -570,11 +570,12 @@ setMethod("plotRawPsiCorr",
 #' @return a heatmap ggplot object
 #' @importFrom magrittr %>%
 #' @importFrom dplyr arrange mutate
+#' @importFrom rqdatatable natural_join
 #' @importFrom tidyr pivot_longer 
 #' @importFrom tibble rownames_to_column
 #' @importFrom forcats fct_inorder
 
-plot.raw.psi.heatmap <- function(object, node.list, cell.types, index.type){
+plot.raw.psi.heatmap <- function(object_above, object_below, node.list, cell.types){
     
     
     cell_types_all <- cell.types
@@ -587,7 +588,35 @@ plot.raw.psi.heatmap <- function(object, node.list, cell.types, index.type){
     
     #print(cell_type)
     
-    raw_psi_new <- data.frame(getRawPsi(tasic, gene_nodes_all, cell_type, index.type))
+       raw_psi_ct <- getRawPsi(object_above, gene_nodes_all, cell_type, 'above')
+       
+       raw_psi_ct_below <- getRawPsi(object_below, gene_nodes_all, cell_type, 'below')
+       
+       
+       if(!all(is.na(raw_psi_ct))){
+           
+           raw_psi_ct$node_id <- rownames(raw_psi_ct)
+       }
+       
+      if(!all(is.na(raw_psi_ct_below))){
+           
+           raw_psi_ct_below$node_id <- rownames(raw_psi_ct_below)
+       }
+       
+      if(!all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))){
+       
+       raw_psi_ct_all <- natural_join(raw_psi_ct, raw_psi_ct_below, by = 'node_id', jointype = "FULL")
+          
+       rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+       
+       
+    if(!all(is.na(raw_psi_ct_all))){
+       
+    raw_psi_new <- data.frame(rowMeans(raw_psi_ct_all, na.rm = TRUE))
     
     if(!all(is.na(raw_psi_new))){
 
@@ -602,7 +631,8 @@ plot.raw.psi.heatmap <- function(object, node.list, cell.types, index.type){
             raw_psi <- rbind(raw_psi, raw_psi_add)
         }
         
-    }
+        }
+        }
     
 }
     
@@ -627,10 +657,10 @@ plot.raw.psi.heatmap <- function(object, node.list, cell.types, index.type){
 #' @rdname plotRawPsiHeatmap
 #' @aliases plotRawPsiHeatmap
 setMethod("plotRawPsiHeatmap",
-                    signature(object = 'SCFind',
+                    signature(object_above = 'SCFind',
+                              object_below = 'SCFind',
                     node.list = 'character',
-                    cell.types = 'character',
-                   index.type = 'character'),
+                    cell.types = 'character'),
           definition = plot.raw.psi.heatmap)
 
 

@@ -3,21 +3,24 @@
 \name{plotRawPsiHeatmap}
 \alias{plotRawPsiHeatmap}
 \alias{plot.raw.psi.heatmap}
-\alias{plotRawPsiHeatmap,SCFind,character,character,character-method}
+\alias{plotRawPsiHeatmap,SCFind,SCFind,character,character-method}
 \title{This function plots heatmap of PSI values}
 \usage{
-\method{plot}{raw.psi.heatmap}(object, node.list, cell.types, index.type)
+\method{plot}{raw.psi.heatmap}(object_above, object_below, node.list, cell.types)
 
-\S4method{plotRawPsiHeatmap}{SCFind,character,character,character}(object, node.list, cell.types, index.type)
+\S4method{plotRawPsiHeatmap}{SCFind,SCFind,character,character}(object_above, object_below, node.list, cell.types)
 }
 \arguments{
-\item{object}{the \code{SCFind} object}
-
 \item{node.list}{a list of nodes whose raw psi is to be plotted}
 
 \item{cell.types}{a list of cell types whose raw psi is to be plotted}
 
+\item{object}{the \code{SCFind} object}
+
 \item{index.type}{above or below as the type of the input index}
+}
+\value{
+a heatmap ggplot object
 }
 \description{
 This function plots heatmap of PSI values

@@ -122,10 +122,10 @@ setGeneric(name = "plotRawPsiCorr",
 #'
 #' @export
 setGeneric(name = "plotRawPsiHeatmap",
-            def = function(object,
+            def = function(object_above, 
+                           object_below,
                     node.list,
-                    cell.types ,
-                    index.type)          
+                    cell.types)          
             {
              standardGeneric("plotRawPsiHeatmap")
              

@@ -24,6 +24,7 @@ output=opt$output
 devtools::load_all("~/scfindME")
 
 index <- loadObject(index_path)
+
 object <- index
 
 stats <- object@metadata$stats
@@ -33,6 +34,7 @@ stats$node_id <- rownames(stats)
 node.list <- object@metadata$node_list
 
 all_genes <- as.character(levels(factor(node.list$external_gene_name)))
+all_genes <- all_genes[!(all_genes %in% c("Agtpbp1"))]
     
   a <- merge(stats, node.list, by.x = "node_id", 
              by.y = "Gene_node", 
@@ -44,18 +46,22 @@ all_genes <- as.character(levels(factor(node.list$external_gene_name)))
 
 node_types <- 'node_types_all'
 
+message("start processing all genes to find MXEs")
+
 for(gene in all_genes){
     
     
-    nodes <- geneNodes(index, gene,"external_gene_name")
+    nodes <- geneNodes(object, gene,"external_gene_name")
     
     if(nrow(nodes) == 0) {break}
     
     if(nrow(nodes) > 1){
     
-    nodes_check <- nodes[which(nodes$Type %in% c("CE", "AA", "AD","RI","AF","AL")), 'Gene_node']
+    #nodes_check <- nodes[which(nodes$Type %in% c("CE", "AA", "AD","RI","AF","AL")), 'Gene_node']
+        nodes_check <- nodes[which(nodes$Type %in% c("CE")), 'Gene_node']
     
-    
+    if(length(nodes_check) > 1){
+        
     pairs <- as.data.frame(combn(nodes_check,2))
     
     
@@ -78,7 +84,7 @@ for(gene in all_genes){
         
             # at least in one cell typs it is specific
         
-            if(sum(hyperQueryCellTypesAS(object, test_comb)$pval < 0.1) > 1 | sum(hyperQueryCellTypesAS(object, test_comb_2)$pval < 0.1) > 1){
+            if(try(sum(hyperQueryCellTypesAS(object, test_comb)$pval < 0.1) > 1 | sum(hyperQueryCellTypesAS(object, test_comb_2)$pval < 0.1) > 1)){
                 
             
                 # this is a promising mutually exclusive exon
@@ -91,6 +97,7 @@ for(gene in all_genes){
     }
     
  }
+        }
 }
 
 saveRDS(d,  paste(output, name, "mutually_exclusive_exons.rds", sep = "_"))

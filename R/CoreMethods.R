@@ -378,67 +378,88 @@ setMethod("findMutuallyExclusive",
 #' @param cell.type cell type tp query, can only query one cell type at once
 #' @param index.type above or below to indicate the type of splicing index
 #' @return a dataframe that contains raw psi value in the queried cell type of the gene.list
-#' 
+#' @importFrom rquery natural_join
 #' 
 
-get.raw.psi <- function(object, gene.list, cell.type, index.type){
+get.raw.psi <- function(object_above, object_below, node.list, cell.types){
     
-    if(!(index.type %in% c("above", "below"))){
+    
+    cell_types_all <- cell.types
+    
+    gene_nodes_all <- node.list
+    # build raw psi matrix for tasic input
+    raw_psi <- data.frame()
+
+  
+   for(cell_type in cell_types_all){
+    
+    #print(cell_type)
+    
+       raw_psi_ct <- get.cell.type.raw.psi(object_above, gene_nodes_all, cell_type, 'above')
+       
+       raw_psi_ct_below <- get.cell.type.raw.psi(object_below, gene_nodes_all, cell_type, 'below')
+       
+       
+       if(!all(is.na(raw_psi_ct))){
+           
+           raw_psi_ct$node_id <- rownames(raw_psi_ct)
+       }
+       
+      if(!all(is.na(raw_psi_ct_below))){
+           
+           raw_psi_ct_below$node_id <- rownames(raw_psi_ct_below)
+       }
+       
+      if(!all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))){
+       
+       raw_psi_ct_all <- natural_join(raw_psi_ct, raw_psi_ct_below, by = 'node_id', jointype = "FULL")
+          
+       rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+       
+       
+    if(!all(is.na(raw_psi_ct_all))){
+       
+    raw_psi_new <- data.frame(raw_psi_ct_all)
+    
+    if(!all(is.na(raw_psi_new))){
+
+    colnames(raw_psi_new) <- paste(cell_type, seq(1, ncol(raw_psi_new)), sep = "_")
         
-        warning("index.type should be either above or below")
-    }
-    
-    if(length(cell.type) != 1){
+        raw_psi_add <- raw_psi_new %>% rownames_to_column("node_num") %>%
+        pivot_longer(cols = -c(node_num), names_to = 'cell_type_num', values_to = "raw_psi")
         
-        warning("can only query one cell type at once")
+        if(nrow(raw_psi) == 0){
+            raw_psi <- raw_psi_add
+        } else {
+            raw_psi <- rbind(raw_psi, raw_psi_add)
+        }
         
-    }
-    
-    
-    cells_psi <- as.data.frame(object@index$getCellTypeExpression(cell.type))
-    
-    scaled_psi <- cells_psi[which(rownames(cells_psi) %in% gene.list), ]
-    
-    #print(dim(scaled_psi))
-    
-    mean <- object@metadata$stats[which(rownames(object@metadata$stats) %in% gene.list), 'mean']
-    
-    if(nrow(scaled_psi) == 0 ){
-        
-        warning(paste(cell.type, " does not have PSI quantification of the queried nodes", sep = ""))
-        return(NA)
-    }
-    
-    if(index.type == "above"){
-        raw_psi <- scaled_psi * 0.01 + mean
-        
-    }else{
-        raw_psi <- mean - scaled_psi * 0.01
-        
-    }
-    
-    raw_psi[raw_psi > 1] <- 1
-    raw_psi[raw_psi < 0] <- 0
-    
-    # when some nodes does not present in a cell type, add NAs to return a complete dataframe
-    if(nrow(raw_psi) != length(gene.list)){
-        
-        na_nodes <- gene.list[which(!(gene.list %in% rownames(raw_psi)))]
-        #print(na_nodes)
-        raw_psi[na_nodes, ] <- NA
-    }
-    
-    return(raw_psi)
+        }
+        }
     
 }
+    
+    raw_psi <- raw_psi %>% pivot_wider(names_from = cell_type_num, values_from = raw_psi) %>% as.data.frame()
+    rownames(raw_psi) <- raw_psi$node_num
+    
+    raw_psi <- raw_psi[, which(!(colnames(raw_psi) %in% c("node_num")))]
+    
+    return(raw_psi)
+}
+
+
     
 #' @rdname getRawPsi
 #' @aliases getRawPsi
 setMethod("getRawPsi",
-          signature(object = "SCFind", 
-                     gene.list = "character",
-                    cell.type = "character",
-                    index.type = "character"),
+                    signature(object_above = 'SCFind',
+                              object_below = 'SCFind',
+                    node.list = 'character',
+                    cell.types = 'character'),
           definition = get.raw.psi)
 
 
@@ -570,7 +591,7 @@ setMethod("plotRawPsiCorr",
 #' @return a heatmap ggplot object
 #' @importFrom magrittr %>%
 #' @importFrom dplyr arrange mutate
-#' @importFrom rqdatatable natural_join
+#' @importFrom rquery natural_join
 #' @importFrom tidyr pivot_longer 
 #' @importFrom tibble rownames_to_column
 #' @importFrom forcats fct_inorder
@@ -588,9 +609,9 @@ plot.raw.psi.heatmap <- function(object_above, object_below, node.list, cell.typ
     
     #print(cell_type)
     
-       raw_psi_ct <- getRawPsi(object_above, gene_nodes_all, cell_type, 'above')
+       raw_psi_ct <- get.cell.type.raw.psi(object_above, gene_nodes_all, cell_type, 'above')
        
-       raw_psi_ct_below <- getRawPsi(object_below, gene_nodes_all, cell_type, 'below')
+       raw_psi_ct_below <- get.cell.type.raw.psi(object_below, gene_nodes_all, cell_type, 'below')
        
        
        if(!all(is.na(raw_psi_ct))){

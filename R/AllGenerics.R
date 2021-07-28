@@ -97,10 +97,10 @@ setGeneric(name = "findMutuallyExclusive",
 #'
 #' @export
 setGeneric(name = "getRawPsi",
-          def = function(object, 
-                     gene.list,
-                    cell.type ,
-                    index.type)
+          def = function(object_above, 
+                           object_below,
+                    node.list,
+                    cell.types)    
           {
              standardGeneric("getRawPsi")
              

@@ -203,3 +203,65 @@ cormat <- cormat[hc$order, hc$order]
     cormat[lower.tri(cormat)]<- NA
     return(cormat)
   }
+
+#' This function gets the raw PSI of a node in a cell type
+#'
+#' @param object the \code{SCFind} object
+#' @param gene.list several nodes that we wish to get the raw PSI
+#' @param cell.type cell type tp query, can only query one cell type at once
+#' @param index.type above or below to indicate the type of splicing index
+#' @return a dataframe that contains raw psi value in the queried cell type of the gene.list
+#' 
+#' 
+
+get.cell.type.raw.psi <- function(object, gene.list, cell.type, index.type){
+    
+    if(!(index.type %in% c("above", "below"))){
+        
+        warning("index.type should be either above or below")
+    }
+    
+    if(length(cell.type) != 1){
+        
+        warning("can only query one cell type at once")
+        
+    }
+    
+    
+    cells_psi <- as.data.frame(object@index$getCellTypeExpression(cell.type))
+    
+    scaled_psi <- cells_psi[which(rownames(cells_psi) %in% gene.list), ]
+    
+    #print(dim(scaled_psi))
+    
+    mean <- object@metadata$stats[which(rownames(object@metadata$stats) %in% gene.list), 'mean']
+    
+    if(nrow(scaled_psi) == 0 ){
+        
+        warning(paste(cell.type, " does not have PSI quantification of the queried nodes", sep = ""))
+        return(NA)
+    }
+    
+    if(index.type == "above"){
+        raw_psi <- scaled_psi * 0.01 + mean
+        
+    }else{
+        raw_psi <- mean - scaled_psi * 0.01
+        
+    }
+    
+    raw_psi[raw_psi > 1] <- 1
+    raw_psi[raw_psi < 0] <- 0
+    
+    # when some nodes does not present in a cell type, add NAs to return a complete dataframe
+    if(nrow(raw_psi) != length(gene.list)){
+        
+        na_nodes <- gene.list[which(!(gene.list %in% rownames(raw_psi)))]
+        #print(na_nodes)
+        raw_psi[na_nodes, ] <- NA
+    }
+    
+    return(raw_psi)
+    
+}
+    

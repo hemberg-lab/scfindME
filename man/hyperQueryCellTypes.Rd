@@ -2,18 +2,18 @@
 % Please edit documentation in R/CoreMethods.R
 \name{hyperQueryCellTypes}
 \alias{hyperQueryCellTypes}
-\alias{cell.types.phyper.test}
+\alias{cell.types.phyper.test.AS}
 \alias{hyperQueryCellTypes,SCFind,character-method}
 \title{Runs a query and performs the hypergeometric test for the retrieved cell types}
 \usage{
-cell.types.phyper.test(object, gene.list, datasets)
+cell.types.phyper.test.AS(object, node.list, datasets)
 
-\S4method{hyperQueryCellTypes}{SCFind,character}(object, gene.list, datasets)
+\S4method{hyperQueryCellTypes}{SCFind,character}(object, node.list, datasets)
 }
 \arguments{
 \item{object}{the \code{SCFind} object}
 
-\item{gene.list}{genes to be searched in the gene.index
+\item{node.list}{AS nodes to be searched in the node.list.index
 (Operators: "-gene" to exclude a gene | "*gene" either gene is expressed
 "*-gene" either gene is expressed to be excluded)}
 

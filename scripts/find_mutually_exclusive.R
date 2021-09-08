@@ -34,7 +34,7 @@ stats$node_id <- rownames(stats)
 node.list <- object@metadata$node_list
 
 all_genes <- as.character(levels(factor(node.list$external_gene_name)))
-all_genes <- all_genes[!(all_genes %in% c("Agtpbp1"))]
+
     
   a <- merge(stats, node.list, by.x = "node_id", 
              by.y = "Gene_node", 
@@ -50,6 +50,7 @@ message("start processing all genes to find MXEs")
 
 for(gene in all_genes){
     
+#for(gene in all_genes[1:100]){
     
     nodes <- geneNodes(object, gene,"external_gene_name")
     
@@ -66,6 +67,8 @@ for(gene in all_genes){
     
     
     for(i in seq(1, ncol(pairs))){
+        
+         skip_to_next <- FALSE
     
     node_1 <- pairs[1, i]
     node_2 <- pairs[2, i]
@@ -84,9 +87,10 @@ for(gene in all_genes){
         
             # at least in one cell typs it is specific
         
-            if(try(sum(hyperQueryCellTypesAS(object, test_comb)$pval < 0.1) > 1 | sum(hyperQueryCellTypesAS(object, test_comb_2)$pval < 0.1) > 1)){
-                
-            
+        condition <-tryCatch({sum(hyperQueryCellTypesAS(object, test_comb)$pval < 0.1) > 1 | sum(hyperQueryCellTypesAS(object, test_comb_2)$pval < 0.1) > 1},  error = function(e) { skip_to_next <<- TRUE})
+        
+  if(skip_to_next) { next }     
+  else if(condition == TRUE) {
                 # this is a promising mutually exclusive exon
                 d <-  rbind(d, a_1, a_2)
                 

@@ -19,7 +19,7 @@
 #' @useDynLib scfindME
 #'
 
-buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.label, qb = 2)
+buildAltSpliceIndex.PSI <- function(psival, metadata, dataset.name, column.label, qb = 2)
 {
   if (missing(dataset.name))
   {
@@ -83,7 +83,7 @@ buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.l
 #' @rdname buildAltSpliceIndex
 #' @aliases buildAltSpliceIndex
 setMethod("buildAltSpliceIndex",
-          definition = buildAltSpliceIndex.NodePSI)
+          definition = buildAltSpliceIndex.PSI)
 
 
 #' Add necessary elements of the metadata slot of an altervnative splicing SCFind index object
@@ -117,7 +117,7 @@ setMethod("addIndexMeta",
 
 #' Runs a query and performs the hypergeometric test for the retrieved cell types
 #'
-#' @name hyperQueryCellTypesAS
+#' @name hyperQueryCellTypes
 #' @param object the \code{SCFind} object
 #' @param node.list AS nodes to be searched in the node.list.index
 #' (Operators: "-gene" to exclude a gene | "*gene" either gene is expressed
@@ -138,7 +138,7 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
       return("Exit query")
     }
   }  else {
-    if(!all(node.list.2%in%scfindGenes(object))){
+    if(!all(node.list.2%in%scfindNodes(object))){
       stop("Query nodes not in index, please change your query")
     }
     else {
@@ -160,9 +160,9 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
   }
 }
 
-#' @rdname hyperQueryCellTypesAS
-#' @aliases hyperQueryCellTypesAS
-setMethod("hyperQueryCellTypesAS",
+#' @rdname hyperQueryCellTypes
+#' @aliases hyperQueryCellTypes
+setMethod("hyperQueryCellTypes",
           signature(object = "SCFind",
                     node.list = "character"),
           definition = cell.types.phyper.test.AS)
@@ -343,7 +343,7 @@ find.mutually.exclusive <- function(object, node.types){
         
         candidate <- c(a[i, 'node_id'], a[i+1, "node_id"])
         
-        if(all(candidate%in%scfindGenes(object))){
+        if(all(candidate%in%scfindNodes(object))){
         
         
         if(sum(hyperQueryCellTypesAS(object, candidate)$pval < 0.1) == 0)
@@ -419,6 +419,25 @@ get.raw.psi <- function(object_above, object_below, node.list, cell.types){
           raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
        
        }
+      else if (all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct_below
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+       
+       else if(!all(is.na(raw_psi_ct)) & all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+           
+           
+        }
+        else next
        
        
     if(!all(is.na(raw_psi_ct_all))){
@@ -535,9 +554,9 @@ print(ggheatmap)
     melted_cormat$Var2 <- as.character(melted_cormat$Var2)
     
     
-    pos_corr <- melted_cormat[which(melted_cormat$value>0.5 & melted_cormat$value<1), ]
+    pos_corr <- melted_cormat[which(melted_cormat$value>0 & melted_cormat$value<1), ]
     
-    neg_corr <- melted_cormat[which(melted_cormat$value< (-0.5)), ]
+    neg_corr <- melted_cormat[which(melted_cormat$value< 0), ]
     
     # test the significance of correlation
     # library(Hmisc)
@@ -609,9 +628,9 @@ plot.raw.psi.heatmap <- function(object_above, object_below, node.list, cell.typ
     
     #print(cell_type)
     
-       raw_psi_ct <- get.cell.type.raw.psi(object_above, gene_nodes_all, cell_type, 'above')
+       suppressWarnings(raw_psi_ct <- get.cell.type.raw.psi(object_above, gene_nodes_all, cell_type, 'above'))
        
-       raw_psi_ct_below <- get.cell.type.raw.psi(object_below, gene_nodes_all, cell_type, 'below')
+       suppressWarnings(raw_psi_ct_below <- get.cell.type.raw.psi(object_below, gene_nodes_all, cell_type, 'below'))
        
        
        if(!all(is.na(raw_psi_ct))){
@@ -633,6 +652,26 @@ plot.raw.psi.heatmap <- function(object_above, object_below, node.list, cell.typ
           raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
        
        }
+       
+       else if (all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct_below
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+       
+       else if(!all(is.na(raw_psi_ct)) & all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+           
+           
+           }
+           else next
        
        
     if(!all(is.na(raw_psi_ct_all))){
@@ -669,7 +708,7 @@ plot.raw.psi.heatmap <- function(object_above, object_below, node.list, cell.typ
         x = 'node_num',
         y = 'cell_type') + scale_y_discrete(guide = guide_axis(n.dodge = 2))
 
-    options(repr.plot.width=15 ,repr.plot.height=15)
+    options(repr.plot.width=10 ,repr.plot.height=10)
     
     return(ggheatmap)
     
@@ -686,125 +725,7 @@ setMethod("plotRawPsiHeatmap",
 
 
 
-#' Builds an \code{SCFind} object from a \code{SingleCellExperiment} object
-#'
-#' This function will index a \code{SingleCellExperiment} as an SCFind index.
-#'
-#' @param sce object of SingleCellExperiment class
-#' @param dataset.name name of the dataset that will be prepended in each cell_type
-#' @param assay.name name of the SingleCellExperiment assay that will be considered for the generation of the index
-#' @param cell.type.label the cell.type metadata of the colData SingleCellExperiment that will be used for the index
-#' @param qb number of bits per cell that are going to be used for quantile compression of the expression data
-#'
-#' @name buildCellTypeIndex
-#'
-#' @return an SCFind object
-#'
-#' @importFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom SummarizedExperiment rowData rowData<- colData colData<- assayNames assays
-#' @importFrom hash hash
-#' @importFrom methods new
-#'
-#' @importFrom Rcpp cpp_object_initializer
-#' @useDynLib scfindME
-#'
-buildCellTypeIndex.SCESet <- function(sce, dataset.name, assay.name = 'counts', cell.type.label = 'cell_type1', qb = 2)
-{
 
-  if (grepl(dataset.name,'.'))
-  {
-    stop("The dataset name should not contain any dots")
-  }
-  # because we will use dots to specify cell type names for each dataset
-
-
-  cell.types.all <- as.factor("[["(colData(sce), cell.type.label))
-  # first store all cell types from cell_type1 in colData of the sce into a factor
-  cell.types <- levels(cell.types.all)
-  # use cell types to get the all unique cell types, i.e. all possible cell types in cell.types.all
-  new.cell.types <- hash(keys = cell.types, values = paste0(dataset.name, '.', cell.types))
-  # new.cell.types is to use hashing to store "dataset name.cell types" for output fast
-  genenames <- unique(rowData(sce)$feature_symbol)
-  # get the unique feature(gene names) of the sce object
-  # genenames seems not to be used in this function
-
-  if (length(cell.types) > 0)
-  {
-    non.zero.cell.types <- c()
-    index <- hash()
-    message(paste("Found", length(cell.types), "clusters on", ncol(sce), "cells"))
-    if( ! assay.name %in% assayNames(sce))
-    {
-      stop(paste('Assay name', assay.name, 'not found in the SingleCellExperiment'))
-    }
-    else
-    {
-      message(paste("Generating index for", dataset.name, "from '", assay.name, "' assay"))
-    }
-    exprs <- "[["(sce@assays$data, assay.name)
-    # get gene expression data for this assay inside the sce object
-
-    ef <- new(EliasFanoDB)
-    # prepare the EliasFanoDB object for storing index for cells with non-zero elements
-
-    qb.set <- ef$setQB(qb)
-    if (qb.set == 1)
-    {
-      stop("Setting the quantization bits failed")
-    }
-    # To check the user-specified bits for data storage in ef
-
-    # carry out compression for each cell type seperately - as said in Methods
-    for (cell.type in cell.types) {
-      inds.cell <- which(cell.type == cell.types.all)
-      # find cell inds of this cell type, here cell.type is a settled value inside this loop
-      # and cell.types.all is the actual cell.type stored for each cell, so use which to extract the matched ones
-
-      # find number of cells for this cell type
-      if(length(inds.cell) < 2)
-      {
-        message(paste('Skipping', cell.type))
-        next
-        # next skips out this loop and enters the next one
-      }
-      # ignore cell type with only 1 cell? or zero cell?
-      # if cell.types is inside the levels of cell.types.all, at least there will be one cell having that type right?
-      # however, levels might have redundancy, if we only consider part of the factors
-      # so this skips cell.types in the "levels" but not having any cell belongs to it
-      # but, based on our generation of "levels", how could this happen?
-
-      non.zero.cell.types <- c(non.zero.cell.types, cell.type)
-      # non.zero.cell.types vector add this currerent cell type, since there are >= 2 cells and we do not skip it
-
-      message(paste("\tIndexing", cell.type, "as", new.cell.types[[cell.type]], " with ", length(inds.cell), " cells."))
-
-      cell.type.exp <- exprs[,inds.cell]
-      # get the expression value for all rows(genes), for this list of cell type matched cells
-
-      if(is.matrix(exprs))
-      {
-        ef$indexMatrix(new.cell.types[[cell.type]], cell.type.exp)
-      }
-      else
-      {
-        ef$indexMatrix(new.cell.types[[cell.type]], as.matrix(cell.type.exp))
-      }
-      # make sure indexMatrix is a matrix, in case cell.type.exp only involves one gene or so
-      # (is it possible to be only includes one cell so it is not a matrix? seems not because already ignored above)
-      # why check exprs is matrix, but not cell.type.exp?
-    }
-  }
-  index <- new("SCFind", index = ef, datasets = dataset.name)
-  # the index uses ef to store cells with non-zero expression values
-  # where is the non-zero expression value checked? it is conducted in the efdb coding process
-  return(index)
-}
-
-#' @rdname buildCellTypeIndex
-#' @aliases buildCellTypeIndex buildIndex
-setMethod("buildCellTypeIndex",
-          signature(sce = "SingleCellExperiment"),
-          buildCellTypeIndex.SCESet)
 
 #' This function serializes the DB and save the object as an rds file
 #'
@@ -946,9 +867,9 @@ setMethod("mergeSCE",
 #' @param datasets the datasets of the objects to be considered
 #' @param log.message whether to print a verbose message
 #'
-#' @name markerGenes
+#' @name markerNodes
 #' @return hierarchical list of queries and their respective scores
-find.marker.genes <-  function(object, gene.list, datasets, log.message = 0)
+find.marker.nodes <-  function(object, gene.list, datasets, log.message = 0)
 {
   datasets <- select.datasets(object, datasets)
   results <- object@index$findMarkerGenes(as.character(caseCorrect(object, gene.list)), as.character(datasets), 5, log.message)
@@ -956,13 +877,13 @@ find.marker.genes <-  function(object, gene.list, datasets, log.message = 0)
 }
 
 
-#' @rdname markerGenes
-#' @aliases markerGenes
-setMethod("markerGenes",
+#' @rdname markerNodes
+#' @aliases markerNodes
+setMethod("markerNodes",
           signature(
             object = "SCFind",
             gene.list = "character"),
-          find.marker.genes)
+          find.marker.nodes)
 
 #' Find marker genes for a specific cell type
 #'
@@ -1071,38 +992,6 @@ setMethod("evaluateMarkers",
 
 
 
-#' Runs a query and performs the hypergeometric test for the retrieved cell types
-#'
-#' @name hyperQueryCellTypes
-#' @param object the \code{SCFind} object
-#' @param gene.list genes to be searched in the gene.index
-#' (Operators: "-gene" to exclude a gene | "*gene" either gene is expressed
-#' "*-gene" either gene is expressed to be excluded)
-#' @param datasets the datasets vector that will be tested as background for the hypergeometric test
-#'
-#' @return a DataFrame that contains all cell types with the respective cell cardinality and the hypergeometric test
-cell.types.phyper.test <- function(object, gene.list, datasets)
-{
-
-  result <- findCellTypes.geneList(object, gene.list, datasets)
-  if(!identical(result, list()))
-  {
-    return(phyper.test(object, result, datasets))
-  }
-  else
-  {
-    message("No Cell Is Found!")
-    return(data.frame(cell_type = c(), cell_hits = c(), total_cells = c(), pval = c()))
-  }
-}
-
-#' @rdname hyperQueryCellTypes
-#' @aliases hyperQueryCellTypes
-#'
-setMethod("hyperQueryCellTypes",
-          signature(object = "SCFind",
-                    gene.list = "character"),
-          cell.types.phyper.test)
 
 
 #' Find cell types associated with a given gene list. All cells
@@ -1266,14 +1155,14 @@ setMethod("findCellTypes",
                     gene.list = "character"),
           findCellTypes.geneList)
 
-#' Get all genes in the database
+#' Get all nodes in the database
 #'
-#' @name scfindGenes
+#' @name scfindNodes
 #'
 #' @param object the \code{scfind} object
 #'
 #' @return the list of genes present in the database
-scfind.get.genes.in.db <- function(object)
+scfind.get.nodes.in.db <- function(object)
 {
 
   return(object@index$genes())
@@ -1281,9 +1170,9 @@ scfind.get.genes.in.db <- function(object)
 }
 
 
-#' @rdname scfindGenes
-#' @aliases scfindGenes
-setMethod("scfindGenes", signature(object = "SCFind"), scfind.get.genes.in.db)
+#' @rdname scfindNodes
+#' @aliases scfindNodes
+setMethod("scfindNodes", signature(object = "SCFind"), scfind.get.nodes.in.db)
 
 
 #' Find out how many cell-types each gene is found
@@ -1375,9 +1264,9 @@ setMethod("findTissueSpecificities",
 #' @name findHouseKeepingGenes
 #' @return the list of gene that ubiquitously expressed in a query of cell types
 #'
-house.keeping.genes <- function(object, cell.types, min.recall=.5, max.genes=1000) {
+house.keeping.nodes <- function(object, cell.types, min.recall=.5, max.genes=1000) {
   if(min.recall >= 1 || min.recall <= 0) stop("min.recall reached limit, please use values > 0 and < 1.0.")
-  if(max.genes > length(object@index$genes())) stop(paste("max.genes exceeded limit, please use values > 0 and < ", length(object@index$genes()))) else message("Searching for house keeping genes...")
+  if(max.genes > length(object@index$genes())) stop(paste("max.genes exceeded limit, please use values > 0 and < ", length(object@index$genes()))) else message("Searching for house keeping node...")
   df <- cellTypeMarkers(object, cell.types[1], top.k=max.genes, sort.field="recall")
   house.keeping.genes <- df$genes[which(df$recall>min.recall)]
 
@@ -1385,19 +1274,19 @@ house.keeping.genes <- function(object, cell.types, min.recall=.5, max.genes=100
     setTxtProgressBar(txtProgressBar(1, length(cell.types), style = 3), i)
     df <- cellTypeMarkers(object, cell.types[i], top.k=max.genes, sort.field="recall")
     house.keeping.genes <- intersect(house.keeping.genes, df$genes[which(df$recall>min.recall)])
-    if (length(house.keeping.genes)==0) { stop("No house keeping gene is found.") }
+    if (length(house.keeping.genes)==0) { stop("No house keeping node is found.") }
   }
   cat('\n')
   return( house.keeping.genes )
 }
 
 
-#' @rdname findHouseKeepingGenes
-#' @aliases findHouseKeepingGenes
-setMethod("findHouseKeepingGenes",
+#' @rdname findHouseKeepingNodes
+#' @aliases findHouseKeepinNodes
+setMethod("findHouseKeepingNodes",
           signature(object = "SCFind",
                     cell.types = "character"),
-          house.keeping.genes)
+          house.keeping.nodes)
 
 #'  Find the signature genes for a cell-type
 #'
@@ -1412,9 +1301,9 @@ setMethod("findHouseKeepingGenes",
 #' @name findGeneSignatures
 #' @return the list of gene signatures in a query of cell types
 #'
-gene.signatures <- function(object, cell.types, max.genes=1000, min.cells=10, max.pval=0)
+node.signatures <- function(object, cell.types, max.genes=1000, min.cells=10, max.pval=0)
 {
-  message("Searching for gene signatures...")
+  message("Searching for node signatures...")
   cell.types.all <- if(missing(cell.types)) object@index$getCellTypes() else cellTypeNames(object)[tolower(cellTypeNames(object)) %in% tolower(cell.types)]
   signatures <- list()
   if(length(cell.types.all) != 0)
@@ -1432,11 +1321,11 @@ gene.signatures <- function(object, cell.types, max.genes=1000, min.cells=10, ma
   }
 }
 
-#' @rdname findGeneSignatures
-#' @aliases findGeneSignatures
-setMethod("findGeneSignatures",
+#' @rdname findNodeSignatures
+#' @aliases findNodeSignatures
+setMethod("findNodeSignatures",
           signature(object = "SCFind"),
-          gene.signatures)
+          node.signatures)
 
 #'  Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query
 #'
@@ -1449,7 +1338,7 @@ setMethod("findGeneSignatures",
 #' @name findSimilarGenes
 #' @return the list of genes and their similarities presented in Jaccard indices
 #'
-similar.genes <- function(object, gene.list, datasets, top.k=5) {
+similar.nodes <- function(object, gene.list, datasets, top.k=5) {
   message("Searching for genes with similar pattern...")
   datasets <- if(missing(datasets)) object@datasets else select.datasets(object, datasets)
   gene.list <- caseCorrect(object, gene.list)
@@ -1488,12 +1377,12 @@ similar.genes <- function(object, gene.list, datasets, top.k=5) {
 }
 
 
-#' @rdname findSimilarGenes
-#' @aliases findSimilarGenes
-setMethod("findSimilarGenes",
+#' @rdname findSimilarNodes
+#' @aliases findSimilarNodes
+setMethod("findSimilarNodes",
           signature(object = "SCFind",
                     gene.list = "character"),
-          similar.genes)
+          similar.nodes)
 
 
 

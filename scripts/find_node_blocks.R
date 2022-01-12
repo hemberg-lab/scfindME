@@ -55,6 +55,14 @@ for (gene in all_genes){
     if(abs(tbl[i, 'mean'] - tbl[i-1, 'mean']) < 0.1 &
        abs(tbl[i, 'SD'] - tbl[i-1, 'SD']) < 0.08){
         
+        
+        test_comb <- c(tbl[i-1, 'Gene_node'], tbl[i,  'Gene_node'])
+        
+      condition <-tryCatch({sum(hyperQueryCellTypesAS(object, test_comb)$pval < 0.05) > 1},  error = function(e) { skip_to_next <<- TRUE})
+        
+  if(skip_to_next) { next }     
+  else if(condition == TRUE) {
+        
         add_block <- rbind(tbl[i-1, ], tbl[i, ])
         add_block$block_num <- block_num
         new_block <- rbind(new_block, add_block)
@@ -73,7 +81,9 @@ for (gene in all_genes){
     all_blocks <- rbind(all_blocks, new_block) 
     
 }
+        }
                                    }
+                                   
                                    
     
                                    

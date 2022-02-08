@@ -1,4 +1,4 @@
-#!/usr/bin/R
+#!/usr/bin/env R
 
 library(optparse)
 library(tidyverse)
@@ -20,8 +20,8 @@ index_path=opt$index
 output=opt$output
 
 
-library(scfindME)
-# devtools::load_all("~/scfindME")
+# library(scfindME)
+devtools::load_all("~/scfindME")
 
 index <- loadObject(index_path)
 
@@ -33,6 +33,9 @@ all_genes <- levels(factor(nodeDetails(index, node.list = nodes)$external_gene_n
 all_blocks <- data.frame()
 
 for (gene in all_genes){
+    
+    message(gene)
+    
     
     nodes <- geneNodes(index, gene, 'external_gene_name')
     
@@ -50,42 +53,133 @@ for (gene in all_genes){
     new_block <- data.frame()
     block_num <- 1
                                    
-    if(nrow(tbl) > 2){                               
-    for(i in seq(2, nrow(tbl))){
-    if(abs(tbl[i, 'mean'] - tbl[i-1, 'mean']) < 0.1 &
-       abs(tbl[i, 'SD'] - tbl[i-1, 'SD']) < 0.08){
-        
-        
-        test_comb <- c(tbl[i-1, 'Gene_node'], tbl[i,  'Gene_node'])
-        
-      condition <-tryCatch({sum(hyperQueryCellTypesAS(object, test_comb)$pval < 0.05) > 1},  error = function(e) { skip_to_next <<- TRUE})
-        
-  if(skip_to_next) { next }     
-  else if(condition == TRUE) {
-        
-        add_block <- rbind(tbl[i-1, ], tbl[i, ])
-        add_block$block_num <- block_num
-        new_block <- rbind(new_block, add_block)
-        
-        }
+                                   
+                                   
+ if(nrow(tbl) > 2){  
+     i = 1
+     
+     block_num = 1
+     
+     mean = tbl[i, 'mean'] 
+     
+     SD  = tbl[i, 'SD'] 
+     
+     new_block <- data.frame()
     
-    else{
-        
-        block_num <- ifelse(nrow(new_block) == 0, 1, max(new_block$block_num) + 1)
+     while(i<nrow(tbl)){
+         
+         if(abs(tbl[i+1, 'mean'] - mean) < 0.2 &
+       abs(tbl[i+1, 'SD'] - SD < 0.1)){
+             
+             add_block <- tbl[i+1, ]
+             
+             add_block$block_num <- block_num
+             
+             mean = mean(mean, add_block[, 'mean'])
+             
+             SD = mean(SD, add_block[, 'SD'])
+             
+             
+             if(nrow(new_block) == 0){
+                 
+                 first_in_block <-  tbl[i, ]
+                 first_in_block$block_num <- block_num
+             
+                new_block <- rbind(first_in_block, add_block)
+                 
+             } else {
+             
+             new_block <- rbind(new_block, add_block)
+                 
+                 }
+
+           #print(new_block)
+
+             i = i + 1
+             
+         } else { # nothing more to add for this group
+             
+            if(nrow(new_block) == 0){
+                
+                i = i + 1 
+                
+                mean = tbl[i+1, 'mean'] 
+     
+                SD  = tbl[i+1, 'SD'] 
+                
+            } else if(nrow(new_block) > 0){
+                
+                # potential new block to be add
+                # check cell types specificities
+               # message('examining')
+                #message(block_num)
+            
+                
+                block_now <- block_num
+                
+                
+                test_comb <- new_block %>% dplyr::filter(block_num == block_now) %>% select(Gene_node) 
+                
+                #print(test_comb)
+                
+                skip_to_next <- FALSE
+                
+        condition <- tryCatch({sum(hyperQueryCellTypes(object, test_comb$Gene_node)$pval < 0.05) >= 1},  
+                              error = function(e) { skip_to_next <<- TRUE }) # if the block is significant in some cell types
+
+           if(condition == TRUE) {
+               
+             message("add block No.")
+             message(block_num)
+               
+             sig_cell_types <- hyperQueryCellTypes(object, test_comb$Gene_node) %>% filter(pval < 0.05)
+               
+             add_new_block <- merge(new_block, sig_cell_types, all = TRUE)
+               
+             all_blocks <- rbind(all_blocks, add_new_block)
+             
+             message(paste("finish", block_num))
+               
+             block_num = block_num + 1
+             
+             new_block <- data.frame()
+                
+             mean = tbl[i+1, 'mean'] 
+     
+             SD  = tbl[i+1, 'SD'] 
+                
+             i = i + 1 
+               
+         } else {
+               
+               #message("skip block")
+               #message(block_num)
+               
+                i = i + 1 
+               
+                mean = tbl[i+1, 'mean'] 
+     
+                SD  = tbl[i+1, 'SD'] 
+               
+               # no need to update block num
+               
+               new_block <- data.frame()
+               
+               
+               next
+                    
+           }
+      }
+         
+            }
+     
+     }
+     
     }
-
+                                   
 }
 
-    new_block <- unique(new_block)
-    
-    all_blocks <- rbind(all_blocks, new_block) 
-    
-}
-        }
-                                   }
-                                   
-                                   
-    
+all_blocks <- unique(all_blocks)
                                    
     
 saveRDS(all_blocks, paste(output, name, "all_node_blocks.rds", sep = "_"))

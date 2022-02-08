@@ -127,7 +127,6 @@ buildMatrix.below <- function(matrix.scaled){
   
   # below matrix for below index
   matrix.below <- data.frame(row.names = rownames(matrix.scaled))
-  
   # set na and above ones to zero
   for (cell in seq(1, ncol(matrix.scaled))){
     tv <- matrix.scaled[, cell]

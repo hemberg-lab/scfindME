@@ -458,7 +458,7 @@ get.raw.psi <- function(object_above, object_below, node.list, cell.types){
         }
         
         }
-        }
+    }
     
 }
     
@@ -480,9 +480,6 @@ setMethod("getRawPsi",
                     node.list = 'character',
                     cell.types = 'character'),
           definition = get.raw.psi)
-
-
-
 
 
 #' This function plots correlation of splicing PSI and return significantly correlated nodes

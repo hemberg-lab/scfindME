@@ -30,12 +30,10 @@ buildAltSpliceIndex.PSI <- function(psival, metadata, dataset.name, column.label
     stop("The dataset name should not contain any dots")
   }
 
-
   cell.types.all <- as.factor(metadata[, column.label])
   cell.types <- levels(cell.types.all)
   new.cell.types <- hash(keys = cell.types, values = paste0(dataset.name, '.', cell.types))
   node.names <- unique(rownames(psival))
-
 
   if (length(cell.types) > 0)
   {
@@ -51,7 +49,7 @@ buildAltSpliceIndex.PSI <- function(psival, metadata, dataset.name, column.label
     }
 
     for (cell.type in cell.types) {
-      inds.cell <- which(cell.type == cell.types.all)
+      inds.cell <- which(cell.type == cell.types.all)  # which cells belong to this cell type
       if(length(inds.cell) < 1)
       {
         message(paste('Skipping', cell.type))
@@ -61,7 +59,7 @@ buildAltSpliceIndex.PSI <- function(psival, metadata, dataset.name, column.label
       message(paste("\tIndexing", cell.type, "as", new.cell.types[[cell.type]], " with ", length(inds.cell), " cells."))
 
       # now build index
-      ## order psival matrix as you order the metadata
+      ## order cells in the psival matrix as you order the cellls in metadata
       cell.type.psi.scaled <- psival[,inds.cell]
 
       if(is.matrix(psival))
@@ -89,30 +87,27 @@ setMethod("buildAltSpliceIndex",
 #' Add necessary elements of the metadata slot of an altervnative splicing SCFind index object
 #'
 #' @param object an SCFind class object built by the method "builtAltSpliceIndex"
-#' @param type a character to indicate the type and node contents of the index
-#' @param read.count the read count matrix built by the function "buildMatrix.read_count"
 #' @param stats the statistics matrix built by the function "buildMatrix.stats"
 #' @param node_list the node information matrix built by the function "buildMatrix.node_list"
-#'
+#' @param diff_cut sparse matrix with 1 denoting the removal of node PSI due to not sufficiently deviate from tissue mean
 #' @name addIndexMeta
 #'
 #' @return an SCFind object with classic metadata components
 #' @useDynLib scfindME
 #' 
 
-addIndexMeta.classic <- function(object, type, read.count, stats, node_list){
-  object@metadata$type <- type
-  object@metadata$read_count <- read.count
+addIndexMeta.classic <- function(object, stats, node_list, diff_cut){
   object@metadata$stats <- stats
   object@metadata$node_list <- node_list
+  object@metadata$diff_cut <- diff_cut
   return(object)
-  
 }
 
 #' @rdname addIndexMeta
 #' @aliases addIndexMeta
 setMethod("addIndexMeta",
           definition = addIndexMeta.classic)
+
 
 
 #' Runs a query and performs the hypergeometric test for the retrieved cell types
@@ -897,9 +892,9 @@ cell.type.marker <- function(object, cell.types, background.cell.types, top.k, s
 {
   if (missing(background.cell.types))
   {
-
     background.cell.types <- cellTypeNames(object)
   }
+
   all.cell.types <- object@index$cellTypeMarkers(cell.types, background.cell.types)
   
   if (!(sort.field %in% colnames(all.cell.types)))

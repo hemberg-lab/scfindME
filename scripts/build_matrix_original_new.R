@@ -128,11 +128,11 @@ node_list_all$Gene_num <- gsub("\\..*$", "", node_list_all$Gene)
   gene_node_all <- merge(node_list_all, gene_name, by.x = "Gene_num", by.y = "ensembl_gene_id", all.x = TRUE)
 
 
-saveRDS(matrix.scaled_diff_selected, "matrix_scaled_diff_selected.rds")
-saveRDS(matrix.above, "matrix_above.rds")
-saveRDS(matrix.below, "matrix_below.rds")
-saveRDS(diff_cut, "diff_cut.rds")
-saveRDS(stats, "stats.rds")
-saveRDS(gene_node_all, "gene_node_all.rds")
+saveRDS(matrix.scaled_diff_selected, paste(OUTPUT, "matrix_scaled_diff_selected.rds", sep = ""))
+saveRDS(matrix.above, paste(OUTPUT, "matrix_above.rds", sep = ""))
+saveRDS(matrix.below, paste(OUTPUT, "matrix_below.rds", sep = ""))
+saveRDS(diff_cut, paste(OUTPUT, "diff_cut.rds", sep = ""))
+saveRDS(stats, paste(OUTPUT, "stats.rds", sep = ""))
+saveRDS(gene_node_all, paste(OUTPUT, "gene_node_all.rds", sep = ""))
 
 

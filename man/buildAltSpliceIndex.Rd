@@ -2,17 +2,11 @@
 % Please edit documentation in R/CoreMethods.R
 \name{buildAltSpliceIndex}
 \alias{buildAltSpliceIndex}
-\alias{buildAltSpliceIndex.NodePSI}
+\alias{buildAltSpliceIndex.PSI}
 \alias{buildAltSpliceIndex,ANY-method}
 \title{Builds an \code{SCFind} object from a \code{matrix}}
 \usage{
-buildAltSpliceIndex.NodePSI(
-  psival,
-  metadata,
-  dataset.name,
-  column.label,
-  qb = 2
-)
+buildAltSpliceIndex.PSI(psival, metadata, dataset.name, column.label, qb = 2)
 
 \S4method{buildAltSpliceIndex}{ANY}(
   psival,

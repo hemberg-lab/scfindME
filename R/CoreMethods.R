@@ -19,7 +19,7 @@
 #' @useDynLib scfindME
 #'
 
-buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.label, qb = 2)
+buildAltSpliceIndex.PSI <- function(psival, metadata, dataset.name, column.label, qb = 2)
 {
   if (missing(dataset.name))
   {
@@ -30,12 +30,10 @@ buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.l
     stop("The dataset name should not contain any dots")
   }
 
-
   cell.types.all <- as.factor(metadata[, column.label])
   cell.types <- levels(cell.types.all)
   new.cell.types <- hash(keys = cell.types, values = paste0(dataset.name, '.', cell.types))
   node.names <- unique(rownames(psival))
-
 
   if (length(cell.types) > 0)
   {
@@ -51,7 +49,7 @@ buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.l
     }
 
     for (cell.type in cell.types) {
-      inds.cell <- which(cell.type == cell.types.all)
+      inds.cell <- which(cell.type == cell.types.all)  # which cells belong to this cell type
       if(length(inds.cell) < 1)
       {
         message(paste('Skipping', cell.type))
@@ -61,6 +59,7 @@ buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.l
       message(paste("\tIndexing", cell.type, "as", new.cell.types[[cell.type]], " with ", length(inds.cell), " cells."))
 
       # now build index
+      ## order cells in the psival matrix as you order the cellls in metadata
       cell.type.psi.scaled <- psival[,inds.cell]
 
       if(is.matrix(psival))
@@ -82,30 +81,26 @@ buildAltSpliceIndex.NodePSI <- function(psival, metadata, dataset.name, column.l
 #' @rdname buildAltSpliceIndex
 #' @aliases buildAltSpliceIndex
 setMethod("buildAltSpliceIndex",
-          definition = buildAltSpliceIndex.NodePSI)
+          definition = buildAltSpliceIndex.PSI)
 
 
 #' Add necessary elements of the metadata slot of an altervnative splicing SCFind index object
 #'
 #' @param object an SCFind class object built by the method "builtAltSpliceIndex"
-#' @param type a character to indicate the type and node contents of the index
-#' @param read.count the read count matrix built by the function "buildMatrix.read_count"
 #' @param stats the statistics matrix built by the function "buildMatrix.stats"
 #' @param node_list the node information matrix built by the function "buildMatrix.node_list"
-#'
+#' @param diff_cut sparse matrix with 1 denoting the removal of node PSI due to not sufficiently deviate from tissue mean
 #' @name addIndexMeta
 #'
 #' @return an SCFind object with classic metadata components
 #' @useDynLib scfindME
 #' 
 
-addIndexMeta.classic <- function(object, type, read.count, stats, node_list){
-  object@metadata$type <- type
-  object@metadata$read_count <- read.count
+addIndexMeta.classic <- function(object, stats, node_list, diff_cut){
   object@metadata$stats <- stats
   object@metadata$node_list <- node_list
+  object@metadata$diff_cut <- diff_cut
   return(object)
-  
 }
 
 #' @rdname addIndexMeta
@@ -114,9 +109,10 @@ setMethod("addIndexMeta",
           definition = addIndexMeta.classic)
 
 
+
 #' Runs a query and performs the hypergeometric test for the retrieved cell types
 #'
-#' @name hyperQueryCellTypesAS
+#' @name hyperQueryCellTypes
 #' @param object the \code{SCFind} object
 #' @param node.list AS nodes to be searched in the node.list.index
 #' (Operators: "-gene" to exclude a gene | "*gene" either gene is expressed
@@ -129,19 +125,24 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
 {
   continue = FALSE
   node.list.2 = gsub("[\\*\\-]","", node.list)
-  if(is.null(object@metadata$node_list[["node_id"]])){
+
+  if(is.null(object@metadata$node_list[["Gene_node"]])){
+
     question1 <- readline("Warning: missing node_list metadata in index, can not verify existance of query nodes in index! \nWould you like to continue query? (Y/N)")
+    
     if(regexpr(question1, 'y', ignore.case = TRUE) == 1){
       continue = TRUE
     } else if (regexpr(question1, 'n', ignore.case = TRUE) == 1){
       return("Exit query")
     }
   }  else {
-    if(!all(node.list.2%in%as.character(object@metadata$node_list[["node_id"]]))){
+
+    if(!all(node.list.2%in%scfindNodes(object))){
+      
       stop("Query nodes not in index, please change your query")
     }
     else {
-      message("Verified all query nodes are in index, generating results...")
+      #message("Verified all query nodes are in index, generating results...")
       continue = TRUE
     }
   }
@@ -153,15 +154,15 @@ cell.types.phyper.test.AS <- function(object, node.list, datasets)
     }
     else
     {
-      message("No Cell Is Found!")
+      #message("No Cell Is Found!")
       return(data.frame(cell_type = c(), cell_hits = c(), total_cells = c(), pval = c()))
     }
   }
 }
 
-#' @rdname hyperQueryCellTypesAS
-#' @aliases hyperQueryCellTypesAS
-setMethod("hyperQueryCellTypesAS",
+#' @rdname hyperQueryCellTypes
+#' @aliases hyperQueryCellTypes
+setMethod("hyperQueryCellTypes",
           signature(object = "SCFind",
                     node.list = "character"),
           definition = cell.types.phyper.test.AS)
@@ -179,8 +180,12 @@ node.details <- function(object, node.list){
 
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
 
-  details <- object@metadata$node_list[which(as.character(object@metadata$node_list[["node_id"]])%in%node.list),]
-  return(details)
+  details <- object@metadata$node_list[which(as.character(object@metadata$node_list[["Gene_node"]])%in%node.list),]
+    
+  details_ordered <- details[match(node.list, details$Gene_node),]
+    
+    
+  return(details_ordered)
 
 }
 
@@ -197,14 +202,17 @@ setMethod("nodeDetails",
 #' @name geneNodes
 #' @param object the \code{SCFind} object
 #' @param gene.list gene id or gene name list to find nodes
-#' @param query.type either "gene_id" or "gene_name" to use in query
+#' @param query.type either "Gene", "external_gene_name", "Gene_node" to use in query
 #' @return a dataframe that contains nodes for gene.list
 
 gene.nodes <- function(object, gene.list, query.type){
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
-  if(!query.type%in%c("gene_id", "gene_name", "node_id")) stop("query.type must be \"gene_id\" or \"gene_name\" or \"node_id\"")
+  if(!query.type%in%c("Gene", "external_gene_name", "Gene_node")) stop("query.type must be \"Gene\" or \"external_gene_name\" or \"Gene_node\"")
   node.list <- subset(object@metadata$node_list, as.character(object@metadata$node_list[[query.type]])%in%gene.list, )
-  if(nrow(node.list) == 0) stop("No node is found in this index, please change your query")
+  if(nrow(node.list) == 0) {
+      warning("No node is found in this index, please change your query")
+      return(data.frame())
+      }
   return(node.list)
 }
 
@@ -221,29 +229,45 @@ setMethod("geneNodes",
 #' @name findNodeSets
 #' @param object the \code{SCFind} object
 #' @param gene.list gene id or gene name to find coordinated node sets
-#' @param query.type either "gene_id" or "gene_name" to use in query
+#' @param query.type either "gene_id" or "external_gene_name" to use in query
+#' @param node.types types of splicing nodes to consider in the gene.list
 #' @return a dataframe that contains nodes for gene.list
 
-gene.node.sets <- function(object, gene.list, query.type){
+gene.node.sets <- function(object, gene.list, query.type, node.types){
+  
   nodes <- gene.nodes(object, gene.list, query.type)
-  nodes.new <- nodes[which(as.character(nodes$type) == "CE" | 
-                       as.character(nodes$type) == "AA"  |
-                       as.character(nodes$type) == "AD"  |
-                       as.character(nodes$type) == "RI"), ]
+  nodes.new <- nodes[which(as.character(nodes$Type) %in% node.types), ]
+    
   if(nrow(nodes.new) != 0) {nodes <- nodes.new}
-  markers <- find.marker.genes(object, as.character(nodes$node_id))
+    
+    else {
+        warning(paste("there is no ", node.types, " node in this gene, please change query", sep = ""))
+        return(NA)
+    }
+  
+  markers <- find.marker.genes(object, as.character(nodes$Gene_node))
   if(nrow(markers) == 0) stop("No gene pattern is found")
   sets <- data.frame()
 
   query <- strsplit(as.character(markers[which.max(markers$tfidf), "Query"]), ",")[[1]]
   result <- cell.types.phyper.test(object, query)
+    
+    print("running hyperQueryCellTypeAS using")
+    print(query)
+    print(result)
+    
+    
     for (j in seq(1, nrow(result))){
       if(result$pval[[j]] <= 0.05){
-        message("find a node set")
+        print("find a cell type specific node set\n")
         print(query)
         sets <- rbind(sets, result[j, ])
       }
   }
+    
+    if(nrow(sets) == 0){
+        message("This query is not cell type specific")
+    }
   
   return(sets)
 }
@@ -254,128 +278,451 @@ gene.node.sets <- function(object, gene.list, query.type){
 setMethod("findNodeSets",
           signature(object = "SCFind",
                     gene.list = "character",
-                    query.type = "character"),
+                    query.type = "character",
+                    node.types = "character"),
           definition = gene.node.sets)
 
-#' Builds an \code{SCFind} object from a \code{SingleCellExperiment} object
+
+#' This function finds coordinated node sets for a gene
 #'
-#' This function will index a \code{SingleCellExperiment} as an SCFind index.
-#'
-#' @param sce object of SingleCellExperiment class
-#' @param dataset.name name of the dataset that will be prepended in each cell_type
-#' @param assay.name name of the SingleCellExperiment assay that will be considered for the generation of the index
-#' @param cell.type.label the cell.type metadata of the colData SingleCellExperiment that will be used for the index
-#' @param qb number of bits per cell that are going to be used for quantile compression of the expression data
-#'
-#' @name buildCellTypeIndex
-#'
-#' @return an SCFind object
-#'
-#' @importFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom SummarizedExperiment rowData rowData<- colData colData<- assayNames assays
-#' @importFrom hash hash
-#' @importFrom methods new
-#'
-#' @importFrom Rcpp cpp_object_initializer
-#' @useDynLib scfindME
-#'
-buildCellTypeIndex.SCESet <- function(sce, dataset.name, assay.name = 'counts', cell.type.label = 'cell_type1', qb = 2)
-{
-
-  if (grepl(dataset.name,'.'))
-  {
-    stop("The dataset name should not contain any dots")
-  }
-  # because we will use dots to specify cell type names for each dataset
-
-
-  cell.types.all <- as.factor("[["(colData(sce), cell.type.label))
-  # first store all cell types from cell_type1 in colData of the sce into a factor
-  cell.types <- levels(cell.types.all)
-  # use cell types to get the all unique cell types, i.e. all possible cell types in cell.types.all
-  new.cell.types <- hash(keys = cell.types, values = paste0(dataset.name, '.', cell.types))
-  # new.cell.types is to use hashing to store "dataset name.cell types" for output fast
-  genenames <- unique(rowData(sce)$feature_symbol)
-  # get the unique feature(gene names) of the sce object
-  # genenames seems not to be used in this function
-
-  if (length(cell.types) > 0)
-  {
-    non.zero.cell.types <- c()
-    index <- hash()
-    message(paste("Found", length(cell.types), "clusters on", ncol(sce), "cells"))
-    if( ! assay.name %in% assayNames(sce))
-    {
-      stop(paste('Assay name', assay.name, 'not found in the SingleCellExperiment'))
-    }
-    else
-    {
-      message(paste("Generating index for", dataset.name, "from '", assay.name, "' assay"))
-    }
-    exprs <- "[["(sce@assays$data, assay.name)
-    # get gene expression data for this assay inside the sce object
-
-    ef <- new(EliasFanoDB)
-    # prepare the EliasFanoDB object for storing index for cells with non-zero elements
-
-    qb.set <- ef$setQB(qb)
-    if (qb.set == 1)
-    {
-      stop("Setting the quantization bits failed")
-    }
-    # To check the user-specified bits for data storage in ef
-
-    # carry out compression for each cell type seperately - as said in Methods
-    for (cell.type in cell.types) {
-      inds.cell <- which(cell.type == cell.types.all)
-      # find cell inds of this cell type, here cell.type is a settled value inside this loop
-      # and cell.types.all is the actual cell.type stored for each cell, so use which to extract the matched ones
-
-      # find number of cells for this cell type
-      if(length(inds.cell) < 2)
-      {
-        message(paste('Skipping', cell.type))
-        next
-        # next skips out this loop and enters the next one
-      }
-      # ignore cell type with only 1 cell? or zero cell?
-      # if cell.types is inside the levels of cell.types.all, at least there will be one cell having that type right?
-      # however, levels might have redundancy, if we only consider part of the factors
-      # so this skips cell.types in the "levels" but not having any cell belongs to it
-      # but, based on our generation of "levels", how could this happen?
-
-      non.zero.cell.types <- c(non.zero.cell.types, cell.type)
-      # non.zero.cell.types vector add this currerent cell type, since there are >= 2 cells and we do not skip it
-
-      message(paste("\tIndexing", cell.type, "as", new.cell.types[[cell.type]], " with ", length(inds.cell), " cells."))
-
-      cell.type.exp <- exprs[,inds.cell]
-      # get the expression value for all rows(genes), for this list of cell type matched cells
-
-      if(is.matrix(exprs))
-      {
-        ef$indexMatrix(new.cell.types[[cell.type]], cell.type.exp)
-      }
-      else
-      {
-        ef$indexMatrix(new.cell.types[[cell.type]], as.matrix(cell.type.exp))
-      }
-      # make sure indexMatrix is a matrix, in case cell.type.exp only involves one gene or so
-      # (is it possible to be only includes one cell so it is not a matrix? seems not because already ignored above)
-      # why check exprs is matrix, but not cell.type.exp?
-    }
-  }
-  index <- new("SCFind", index = ef, datasets = dataset.name)
-  # the index uses ef to store cells with non-zero expression values
-  # where is the non-zero expression value checked? it is conducted in the efdb coding process
-  return(index)
+#' @name getCoordinatedNodes
+#' @param object the \code{SCFind} object
+#' @param gene.name external_gene_name of the interested gene
+#' @return a dataframe that contains top queries
+#' @importFrom magrittr %>%
+#' @importFrom dplyr arrange slice_head filter slice_max
+#' 
+get_coordinated_nodes <- function(object, gene.name){
+  
+  query <- markerGenes(object, geneNodes(object, gene.name, 
+                                        query.type = "external_gene_name")$Gene_node) %>% 
+    arrange(desc(Cells, tfidf)) %>% 
+    slice_head(n = 30) %>%
+    filter(Cells == Mode(Cells)) %>% 
+    slice_max(Genes, n = 5)
+  
+  return(query)
 }
 
-#' @rdname buildCellTypeIndex
-#' @aliases buildCellTypeIndex buildIndex
-setMethod("buildCellTypeIndex",
-          signature(sce = "SingleCellExperiment"),
-          buildCellTypeIndex.SCESet)
+#' @rdname getCoordinatedNodes
+#' @aliases getCoordinatedNodes
+setMethod("getCoordinatedNodes",
+          signature(object = "SCFind",
+                    gene.name = "character"),
+          definition = get_coordinated_nodes)
+
+#' This function finds coordinated node sets for a gene
+#'
+#' @name findMutuallyExclusive
+#' @param object the \code{SCFind} object
+#' @param node.types the types of nodes to find mutually exclisive events in
+#' @return a dataframe that contains potential mutually exclusive nodes in the index
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' 
+#' 
+find.mutually.exclusive <- function(object, node.types){
+  stats <- object@metadata$stats
+  stats$node_id <- rownames(stats)
+  
+  
+  node.list <- object@metadata$node_list
+  a <- merge(stats, node.list, by.x = "node_id", 
+             by.y = "Gene_node", 
+             all.x = FALSE, 
+             all.y = FALSE) %>% unique() %>% filter(Type %in% node.types)
+  
+  b <- data.frame(row.names = a$node_id)
+  d <- data.frame(row.names = a$node_id)
+  
+  for(i in seq(1, nrow(a)-1)){
+    if(0.95 <= (a[i, "mean"]+a[i+1, "mean"]) & 
+       (a[i, "mean"]+a[i+1, "mean"]) <= 1.05 & 
+       abs(a[i, "SD"]- a[i+1, "SD"])<0.05 & 
+       as.numeric(a[i, "Node"]) + 1 == as.numeric(a[i+1, "Node"] )){
+        
+        candidate <- c(a[i, 'node_id'], a[i+1, "node_id"])
+        
+        if(all(candidate%in%scfindNodes(object))){
+        
+        
+        if(sum(hyperQueryCellTypesAS(object, candidate)$pval < 0.1) == 0)
+        
+        {
+            
+            d <-  rbind(d, a[i, ], a[i+1, ])
+            
+        }
+    }
+  }
+}
+  d <- d %>% unique()
+  
+  return(d)
+  
+}
+
+#' @rdname findMutuallyExclusive
+#' @aliases findMutuallyExclusive
+setMethod("findMutuallyExclusive",
+          signature(object = "SCFind", 
+                    node.types = "character"),
+          definition = find.mutually.exclusive)
+
+
+#' This function gets the raw PSI of a node in a cell type
+#'
+#' @name getRawPsi
+#' @param object the \code{SCFind} object
+#' @param gene.list several nodes that we wish to get the raw PSI
+#' @param cell.type cell type tp query, can only query one cell type at once
+#' @param index.type above or below to indicate the type of splicing index
+#' @return a dataframe that contains raw psi value in the queried cell type of the gene.list
+#' @importFrom rquery natural_join
+#' 
+
+get.raw.psi <- function(object_above, object_below, node.list, cell.types){
+    
+    
+    cell_types_all <- cell.types
+    
+    gene_nodes_all <- node.list
+    # build raw psi matrix for tasic input
+    raw_psi <- data.frame()
+
+  
+   for(cell_type in cell_types_all){
+    
+    #print(cell_type)
+    
+       raw_psi_ct <- get.cell.type.raw.psi(object_above, gene_nodes_all, cell_type, 'above')
+       
+       raw_psi_ct_below <- get.cell.type.raw.psi(object_below, gene_nodes_all, cell_type, 'below')
+       
+       
+       if(!all(is.na(raw_psi_ct))){
+           
+           raw_psi_ct$node_id <- rownames(raw_psi_ct)
+       }
+       
+      if(!all(is.na(raw_psi_ct_below))){
+           
+           raw_psi_ct_below$node_id <- rownames(raw_psi_ct_below)
+       }
+       
+      if(!all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))){
+       
+       raw_psi_ct_all <- natural_join(raw_psi_ct, raw_psi_ct_below, by = 'node_id', jointype = "FULL")
+          
+       rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+      else if (all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct_below
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+       
+       else if(!all(is.na(raw_psi_ct)) & all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+           
+           
+        }
+        else next
+       
+       
+    if(!all(is.na(raw_psi_ct_all))){
+       
+    raw_psi_new <- data.frame(raw_psi_ct_all)
+    
+    if(!all(is.na(raw_psi_new))){
+
+    colnames(raw_psi_new) <- paste(cell_type, seq(1, ncol(raw_psi_new)), sep = "_")
+        
+        raw_psi_add <- raw_psi_new %>% rownames_to_column("node_num") %>%
+        pivot_longer(cols = -c(node_num), names_to = 'cell_type_num', values_to = "raw_psi")
+        
+        if(nrow(raw_psi) == 0){
+            raw_psi <- raw_psi_add
+        } else {
+            raw_psi <- rbind(raw_psi, raw_psi_add)
+        }
+        
+        }
+    }
+    
+}
+    
+    raw_psi <- raw_psi %>% pivot_wider(names_from = cell_type_num, values_from = raw_psi) %>% as.data.frame()
+    rownames(raw_psi) <- raw_psi$node_num
+    
+    raw_psi <- raw_psi[, which(!(colnames(raw_psi) %in% c("node_num")))]
+    
+    return(raw_psi)
+}
+
+
+    
+#' @rdname getRawPsi
+#' @aliases getRawPsi
+setMethod("getRawPsi",
+                    signature(object_above = 'SCFind',
+                              object_below = 'SCFind',
+                    node.list = 'character',
+                    cell.types = 'character'),
+          definition = get.raw.psi)
+
+
+#' This function plots correlation of splicing PSI and return significantly correlated nodes
+#'
+#' @name plotRawPsiCorr
+#' @param raw_psi raw psi matrx, each row is a gene, each col is a cell
+#' @param node.list node list whose PSI is to be plotted, default 'all_nodes' 
+#' @param cell.types cell types to consider, default 'all_cell_types'
+#' @importFrom Hmisc rcorr
+#' @import ggplot2
+#' @return a list object with heatmap, pos corr and neg corr
+#' 
+
+plot.raw.psi.corr <- function(raw_psi, node.list = 'all_nodes', cell.types = 'all_cell_types'){
+    
+    # in raw_psi, each row is a node, each col is a cell type
+    # we need cor among nodes, so transform
+    
+    if(node.list == 'all_nodes') node.list <- rownames(raw_psi)
+    
+    if(cell.types == 'all_cell_types') cell.types <- colnames(raw_psi)
+    
+    raw_psi <- raw_psi[which(rownames(raw_psi) %in% node.list), which(colnames(raw_psi) %in% cell.types)]
+    
+    
+    if(nrow(raw_psi) == 0 | ncol(raw_psi) == 0){
+        
+        warning("No value to plot, please change query")
+        return(NA)
+        
+    }
+    
+    corr <- cor(t(raw_psi), method = 'pearson', use = "pairwise.complete.obs")
+    
+    
+    corr[which(is.na(corr))] <- 0
+    
+    
+    # Reorder the correlation matrix
+    cormat <- reorder_cormat(corr)
+    upper_tri <- get_upper_tri(cormat)
+
+    # Melt the correlation matrix
+    melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+    labels <- melted_cormat$Var1
+
+    # Create a ggheatmap
+    ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+     geom_tile(color = "white")+
+     scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+        midpoint = 0, limit = c(-1,1), space = "Lab", 
+        name="Pearson\nCorrelation") +
+        theme_minimal()+ # minimal theme
+        theme(axis.title = element_text(size = 12), 
+              axis.text.x = element_text(angle = 90, vjust = 0.5, size = 10, hjust = 0.5), 
+              axis.text.y = element_text(size = 10))+
+        coord_fixed() + 
+        scale_x_discrete(breaks=melted_cormat$Var1, 
+                         labels=as.character(melted_cormat$Var1)) + 
+    labs(title = 'PSI correlation of query nodes using query cell types', x = 'Gene_node', y = 'Gene_node')
+
+# Print the heatmap
+# Takes a while
+print(ggheatmap)
+    
+    # get pos and neg correlated nodes
+    melted_cormat$Var1 <- as.character(melted_cormat$Var1)
+    melted_cormat$Var2 <- as.character(melted_cormat$Var2)
+    
+    
+    pos_corr <- melted_cormat[which(melted_cormat$value>0 & melted_cormat$value<1), ]
+    
+    neg_corr <- melted_cormat[which(melted_cormat$value< 0), ]
+    
+    # test the significance of correlation
+    # library(Hmisc)
+    res <- suppressWarnings(Hmisc::rcorr(as.matrix(t(raw_psi))))
+    
+    round_p <- round(res$P, 3)
+    
+    round_p <- get_upper_tri(round_p)
+    
+    melted_p <- melt(round_p, na.rm = TRUE)
+    
+    sig <- melted_p[which(melted_p$value < 0.05), ]
+    
+    #print(levels(sig$Var1))
+    
+    pos_sig <- pos_corr[which(pos_corr$Var1 %in% levels(sig$Var1)), ]
+    message("significantly positively correlated nodes :")
+    print(pos_sig)
+    
+    neg_sig <- neg_corr[which(neg_corr$Var1 %in% levels(sig$Var1)), ]
+    
+    message("significantly negatively correlated nodes :")
+    print(neg_sig)
+    
+    final <- list('heatmap' = ggheatmap, 'sig_pos_corr' = pos_sig, 'sig_neg_corr' = neg_sig)
+    return(final)
+    
+}
+
+
+
+#' @rdname plotRawPsiCorr
+#' @aliases plotRawPsiCorr
+setMethod("plotRawPsiCorr",
+          signature(raw_psi = 'data.frame',
+                    node.list = 'character',
+                    cell.types = 'character'),
+          definition = plot.raw.psi.corr)
+
+
+
+
+
+#' This function plots heatmap of PSI values
+#'
+#' @name plotRawPsiHeatmap
+#' @param object the \code{SCFind} object
+#' @param node.list a list of nodes whose raw psi is to be plotted
+#' @param cell.types a list of cell types whose raw psi is to be plotted
+#' @param index.type above or below as the type of the input index
+#' @return a heatmap ggplot object
+#' @importFrom magrittr %>%
+#' @importFrom dplyr arrange mutate
+#' @importFrom rquery natural_join
+#' @importFrom tidyr pivot_longer 
+#' @importFrom tibble rownames_to_column
+#' @importFrom forcats fct_inorder
+
+plot.raw.psi.heatmap <- function(object_above, object_below, node.list, cell.types){
+    
+    
+    cell_types_all <- cell.types
+    
+    gene_nodes_all <- node.list
+    # build raw psi matrix for tasic input
+    raw_psi <- data.frame()
+
+   for(cell_type in cell_types_all){
+    
+    #print(cell_type)
+    
+       suppressWarnings(raw_psi_ct <- get.cell.type.raw.psi(object_above, gene_nodes_all, cell_type, 'above'))
+       
+       suppressWarnings(raw_psi_ct_below <- get.cell.type.raw.psi(object_below, gene_nodes_all, cell_type, 'below'))
+       
+       
+       if(!all(is.na(raw_psi_ct))){
+           
+           raw_psi_ct$node_id <- rownames(raw_psi_ct)
+       }
+       
+      if(!all(is.na(raw_psi_ct_below))){
+           
+           raw_psi_ct_below$node_id <- rownames(raw_psi_ct_below)
+       }
+       
+      if(!all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))){
+       
+       raw_psi_ct_all <- natural_join(raw_psi_ct, raw_psi_ct_below, by = 'node_id', jointype = "FULL")
+          
+       rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+       
+       else if (all(is.na(raw_psi_ct)) & !all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct_below
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+       
+       }
+       
+       else if(!all(is.na(raw_psi_ct)) & all(is.na(raw_psi_ct_below))) {
+           
+           raw_psi_ct_all <- raw_psi_ct
+           rownames(raw_psi_ct_all) <- raw_psi_ct_all$node_id
+          
+          raw_psi_ct_all <- raw_psi_ct_all %>% select(-node_id)
+           
+           
+           }
+           else next
+       
+       
+    if(!all(is.na(raw_psi_ct_all))){
+       
+    raw_psi_new <- data.frame(rowMeans(raw_psi_ct_all, na.rm = TRUE))
+    
+    if(!all(is.na(raw_psi_new))){
+
+    colnames(raw_psi_new) <- paste(cell_type, seq(1, ncol(raw_psi_new)), sep = "_")
+        
+        raw_psi_add <- raw_psi_new %>% rownames_to_column("node_num") %>%
+        pivot_longer(cols = -c(node_num), names_to = 'cell_type_num', values_to = "raw_psi")
+        
+        if(nrow(raw_psi) == 0){
+            raw_psi <- raw_psi_add
+        } else {
+            raw_psi <- rbind(raw_psi, raw_psi_add)
+        }
+        
+        }
+        }
+    
+}
+    
+    ggheatmap <- raw_psi %>% 
+    arrange(node_num) %>% mutate(node_num = factor(node_num)) %>%
+    ggplot(aes(x = forcats::fct_inorder(node_num), y = cell_type_num, fill = raw_psi)) + 
+    geom_tile()  +
+      theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, 
+                                     vjust = 0.5, 
+                                 hjust = 0.5)) + 
+    labs(title = 'Raw PSI value for query nodes',
+        x = 'node_num',
+        y = 'cell_type') + scale_y_discrete(guide = guide_axis(n.dodge = 2))
+
+    options(repr.plot.width=10 ,repr.plot.height=10)
+    
+    return(ggheatmap)
+    
+}
+
+#' @rdname plotRawPsiHeatmap
+#' @aliases plotRawPsiHeatmap
+setMethod("plotRawPsiHeatmap",
+                    signature(object_above = 'SCFind',
+                              object_below = 'SCFind',
+                    node.list = 'character',
+                    cell.types = 'character'),
+          definition = plot.raw.psi.heatmap)
+
+
+
+
 
 #' This function serializes the DB and save the object as an rds file
 #'
@@ -517,9 +864,9 @@ setMethod("mergeSCE",
 #' @param datasets the datasets of the objects to be considered
 #' @param log.message whether to print a verbose message
 #'
-#' @name markerGenes
+#' @name markerNodes
 #' @return hierarchical list of queries and their respective scores
-find.marker.genes <-  function(object, gene.list, datasets, log.message = 0)
+find.marker.nodes <-  function(object, gene.list, datasets, log.message = 0)
 {
   datasets <- select.datasets(object, datasets)
   results <- object@index$findMarkerGenes(as.character(caseCorrect(object, gene.list)), as.character(datasets), 5, log.message)
@@ -527,13 +874,13 @@ find.marker.genes <-  function(object, gene.list, datasets, log.message = 0)
 }
 
 
-#' @rdname markerGenes
-#' @aliases markerGenes
-setMethod("markerGenes",
+#' @rdname markerNodes
+#' @aliases markerNodes
+setMethod("markerNodes",
           signature(
             object = "SCFind",
             gene.list = "character"),
-          find.marker.genes)
+          find.marker.nodes)
 
 #' Find marker genes for a specific cell type
 #'
@@ -550,10 +897,11 @@ cell.type.marker <- function(object, cell.types, background.cell.types, top.k, s
 {
   if (missing(background.cell.types))
   {
-
     background.cell.types <- cellTypeNames(object)
   }
+
   all.cell.types <- object@index$cellTypeMarkers(cell.types, background.cell.types)
+  
   if (!(sort.field %in% colnames(all.cell.types)))
   {
     message(paste("Column", sort.field, "not found"))
@@ -641,38 +989,6 @@ setMethod("evaluateMarkers",
 
 
 
-#' Runs a query and performs the hypergeometric test for the retrieved cell types
-#'
-#' @name hyperQueryCellTypes
-#' @param object the \code{SCFind} object
-#' @param gene.list genes to be searched in the gene.index
-#' (Operators: "-gene" to exclude a gene | "*gene" either gene is expressed
-#' "*-gene" either gene is expressed to be excluded)
-#' @param datasets the datasets vector that will be tested as background for the hypergeometric test
-#'
-#' @return a DataFrame that contains all cell types with the respective cell cardinality and the hypergeometric test
-cell.types.phyper.test <- function(object, gene.list, datasets)
-{
-
-  result <- findCellTypes.geneList(object, gene.list, datasets)
-  if(!identical(result, list()))
-  {
-    return(phyper.test(object, result, datasets))
-  }
-  else
-  {
-    message("No Cell Is Found!")
-    return(data.frame(cell_type = c(), cell_hits = c(), total_cells = c(), pval = c()))
-  }
-}
-
-#' @rdname hyperQueryCellTypes
-#' @aliases hyperQueryCellTypes
-#'
-setMethod("hyperQueryCellTypes",
-          signature(object = "SCFind",
-                    gene.list = "character"),
-          cell.types.phyper.test)
 
 
 #' Find cell types associated with a given gene list. All cells
@@ -836,14 +1152,14 @@ setMethod("findCellTypes",
                     gene.list = "character"),
           findCellTypes.geneList)
 
-#' Get all genes in the database
+#' Get all nodes in the database
 #'
-#' @name scfindGenes
+#' @name scfindNodes
 #'
 #' @param object the \code{scfind} object
 #'
 #' @return the list of genes present in the database
-scfind.get.genes.in.db <- function(object)
+scfind.get.nodes.in.db <- function(object)
 {
 
   return(object@index$genes())
@@ -851,9 +1167,9 @@ scfind.get.genes.in.db <- function(object)
 }
 
 
-#' @rdname scfindGenes
-#' @aliases scfindGenes
-setMethod("scfindGenes", signature(object = "SCFind"), scfind.get.genes.in.db)
+#' @rdname scfindNodes
+#' @aliases scfindNodes
+setMethod("scfindNodes", signature(object = "SCFind"), scfind.get.nodes.in.db)
 
 
 #' Find out how many cell-types each gene is found
@@ -945,9 +1261,9 @@ setMethod("findTissueSpecificities",
 #' @name findHouseKeepingGenes
 #' @return the list of gene that ubiquitously expressed in a query of cell types
 #'
-house.keeping.genes <- function(object, cell.types, min.recall=.5, max.genes=1000) {
+house.keeping.nodes <- function(object, cell.types, min.recall=.5, max.genes=1000) {
   if(min.recall >= 1 || min.recall <= 0) stop("min.recall reached limit, please use values > 0 and < 1.0.")
-  if(max.genes > length(object@index$genes())) stop(paste("max.genes exceeded limit, please use values > 0 and < ", length(object@index$genes()))) else message("Searching for house keeping genes...")
+  if(max.genes > length(object@index$genes())) stop(paste("max.genes exceeded limit, please use values > 0 and < ", length(object@index$genes()))) else message("Searching for house keeping node...")
   df <- cellTypeMarkers(object, cell.types[1], top.k=max.genes, sort.field="recall")
   house.keeping.genes <- df$genes[which(df$recall>min.recall)]
 
@@ -955,19 +1271,19 @@ house.keeping.genes <- function(object, cell.types, min.recall=.5, max.genes=100
     setTxtProgressBar(txtProgressBar(1, length(cell.types), style = 3), i)
     df <- cellTypeMarkers(object, cell.types[i], top.k=max.genes, sort.field="recall")
     house.keeping.genes <- intersect(house.keeping.genes, df$genes[which(df$recall>min.recall)])
-    if (length(house.keeping.genes)==0) { stop("No house keeping gene is found.") }
+    if (length(house.keeping.genes)==0) { stop("No house keeping node is found.") }
   }
   cat('\n')
   return( house.keeping.genes )
 }
 
 
-#' @rdname findHouseKeepingGenes
-#' @aliases findHouseKeepingGenes
-setMethod("findHouseKeepingGenes",
+#' @rdname findHouseKeepingNodes
+#' @aliases findHouseKeepinNodes
+setMethod("findHouseKeepingNodes",
           signature(object = "SCFind",
                     cell.types = "character"),
-          house.keeping.genes)
+          house.keeping.nodes)
 
 #'  Find the signature genes for a cell-type
 #'
@@ -982,9 +1298,9 @@ setMethod("findHouseKeepingGenes",
 #' @name findGeneSignatures
 #' @return the list of gene signatures in a query of cell types
 #'
-gene.signatures <- function(object, cell.types, max.genes=1000, min.cells=10, max.pval=0)
+node.signatures <- function(object, cell.types, max.genes=1000, min.cells=10, max.pval=0)
 {
-  message("Searching for gene signatures...")
+  message("Searching for node signatures...")
   cell.types.all <- if(missing(cell.types)) object@index$getCellTypes() else cellTypeNames(object)[tolower(cellTypeNames(object)) %in% tolower(cell.types)]
   signatures <- list()
   if(length(cell.types.all) != 0)
@@ -1002,11 +1318,11 @@ gene.signatures <- function(object, cell.types, max.genes=1000, min.cells=10, ma
   }
 }
 
-#' @rdname findGeneSignatures
-#' @aliases findGeneSignatures
-setMethod("findGeneSignatures",
+#' @rdname findNodeSignatures
+#' @aliases findNodeSignatures
+setMethod("findNodeSignatures",
           signature(object = "SCFind"),
-          gene.signatures)
+          node.signatures)
 
 #'  Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query
 #'
@@ -1019,7 +1335,7 @@ setMethod("findGeneSignatures",
 #' @name findSimilarGenes
 #' @return the list of genes and their similarities presented in Jaccard indices
 #'
-similar.genes <- function(object, gene.list, datasets, top.k=5) {
+similar.nodes <- function(object, gene.list, datasets, top.k=5) {
   message("Searching for genes with similar pattern...")
   datasets <- if(missing(datasets)) object@datasets else select.datasets(object, datasets)
   gene.list <- caseCorrect(object, gene.list)
@@ -1058,12 +1374,12 @@ similar.genes <- function(object, gene.list, datasets, top.k=5) {
 }
 
 
-#' @rdname findSimilarGenes
-#' @aliases findSimilarGenes
-setMethod("findSimilarGenes",
+#' @rdname findSimilarNodes
+#' @aliases findSimilarNodes
+setMethod("findSimilarNodes",
           signature(object = "SCFind",
                     gene.list = "character"),
-          similar.genes)
+          similar.nodes)
 
 
 

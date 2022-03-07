@@ -31,12 +31,12 @@ setGeneric(name = "addIndexMeta",
 
 #'
 #' @export
-setGeneric(name = "hyperQueryCellTypesAS",
+setGeneric(name = "hyperQueryCellTypes",
            def = function(object,
                           node.list,
                           datasets)
            {
-             standardGeneric("hyperQueryCellTypesAS")
+             standardGeneric("hyperQueryCellTypes")
 
            })
 
@@ -66,7 +66,8 @@ setGeneric(name = "geneNodes",
 setGeneric(name = "findNodeSets",
            def = function(object,
                           gene.list,
-                          query.type)
+                          query.type,
+                          node.types)
            {
              standardGeneric("findNodeSets")
              
@@ -75,14 +76,59 @@ setGeneric(name = "findNodeSets",
 
 #'
 #' @export
-setGeneric(name = "buildCellTypeIndex",
-           def = function(sce,
-                          dataset.name = '',
-                          assay.name = 'logcounts',
-                          cell.type.label = 'cell_type1',
-                          qb = 2)
+setGeneric(name = "getCoordinatedNodes",
+           def = function(object,
+                          gene.name)
            {
-             standardGeneric("buildCellTypeIndex")
+             standardGeneric("getCoordinatedNodes")
+             
+           })
+
+#'
+#' @export
+setGeneric(name = "findMutuallyExclusive",
+           def = function(object, 
+                          node.types)
+           {
+             standardGeneric("findMutuallyExclusive")
+             
+           })
+
+#'
+#' @export
+setGeneric(name = "getRawPsi",
+          def = function(object_above, 
+                           object_below,
+                    node.list,
+                    cell.types)    
+          {
+             standardGeneric("getRawPsi")
+             
+           })
+
+
+#'
+#' @export
+setGeneric(name = "plotRawPsiCorr",
+          def = function(raw_psi, 
+                     node.list,
+                    cell.types)
+          {
+             standardGeneric("plotRawPsiCorr")
+             
+           })
+
+
+#'
+#' @export
+setGeneric(name = "plotRawPsiHeatmap",
+            def = function(object_above, 
+                           object_below,
+                    node.list,
+                    cell.types)          
+            {
+             standardGeneric("plotRawPsiHeatmap")
+             
            })
 
 
@@ -153,27 +199,20 @@ setGeneric(name = "saveObject", function(object, file){
   standardGeneric("saveObject")
 })
 
-#' @export
-setGeneric(name = "hyperQueryCellTypes", function(object,
-                                                  gene.list,
-                                                  datasets){
-  standardGeneric("hyperQueryCellTypes")
-
-})
 
 #' Performs query optimization and return the best candidate gene sets
 #'
 #' @export
 
-setGeneric(name = "markerGenes", function(object, gene.list, datasets, log.message = 0)
+setGeneric(name = "markerNodes", function(object, gene.list, datasets, log.message = 0)
 {
-  standardGeneric("markerGenes")
+  standardGeneric("markerNodes")
 })
 
 
 #' @export
-setGeneric(name = "scfindGenes", function(object){
-  standardGeneric("scfindGenes")
+setGeneric(name = "scfindNodes", function(object){
+  standardGeneric("scfindNodes")
 })
 
 
@@ -200,29 +239,29 @@ setGeneric(name = "findTissueSpecificities", function(object,
 #' Find the set of genes that are ubiquitously expressed in a query of cell types
 #'
 #' @export
-setGeneric(name = "findHouseKeepingGenes", function(object,
+setGeneric(name = "findHouseKeepingNodes", function(object,
                                                     cell.types,
                                                     min.recall = .5,
                                                     max.genes = 1000){
-  standardGeneric("findHouseKeepingGenes")
+  standardGeneric("findHouseKeepingNodes")
 })
 
 #' Find the signature genes for a cell-type
 #'
 #' @export
-setGeneric(name = "findGeneSignatures", function(object,
+setGeneric(name = "findNodeSignatures", function(object,
                                                  cell.types,
                                                  max.genes = 1000,
                                                  min.cells = 10,
                                                  max.pval = 0){
-  standardGeneric("findGeneSignatures")
+  standardGeneric("findNodeSignatures")
 })
 
 #' Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query
 #'
 #' @export
-setGeneric(name = "findSimilarGenes", function(object, gene.list, datasets, top.k = 5){
-  standardGeneric("findSimilarGenes")
+setGeneric(name = "findSimilarNodes", function(object, gene.list, datasets, top.k = 5){
+  standardGeneric("findSimilarNodes")
 })
 
 

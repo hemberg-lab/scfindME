@@ -15,7 +15,7 @@ gene.nodes(object, gene.list, query.type)
 
 \item{gene.list}{gene id or gene name list to find nodes}
 
-\item{query.type}{either "gene_id" or "gene_name" to use in query}
+\item{query.type}{either "Gene", "external_gene_name", "Gene_node" to use in query}
 }
 \value{
 a dataframe that contains nodes for gene.list

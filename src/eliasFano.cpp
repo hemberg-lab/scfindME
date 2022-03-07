@@ -998,7 +998,7 @@ Rcpp::List EliasFanoDB::_findCellTypes(const std::vector<GeneName>& gene_names, 
 
 // TODO(Nikos) this function can be optimized.. It uses the native quering mechanism
 // that casts the results into native R data structures
-Rcpp::DataFrame EliasFanoDB::findMarkerGenes(const Rcpp::CharacterVector& gene_list, const Rcpp::CharacterVector datasets_active,unsigned int min_support_cutoff = 5, bool console_message = false)
+Rcpp::DataFrame EliasFanoDB::findMarkerGenes(const Rcpp::CharacterVector& gene_list, const Rcpp::CharacterVector datasets_active,unsigned int min_support_cutoff = 3, bool console_message = false)
 {
     
   std::vector<std::string> query;

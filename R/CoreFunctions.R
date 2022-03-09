@@ -209,59 +209,106 @@ cormat <- cormat[hc$order, hc$order]
 #' @param object the \code{SCFind} object
 #' @param gene.list several nodes that we wish to get the raw PSI
 #' @param cell.type cell type tp query, can only query one cell type at once
-#' @param index.type above or below to indicate the type of splicing index
 #' @return a dataframe that contains raw psi value in the queried cell type of the gene.list
 #' 
 #' 
 
-get.cell.type.raw.psi <- function(object, gene.list, cell.type, index.type){
+get.cell.type.raw.psi <- function(object, gene.list, cell.type){
     
-    if(!(index.type %in% c("above", "below"))){
+    if(any(grepl("above|below", object@datasets)) == FALSE){
         
-        warning("index.type should be either above or below")
+        warning("index must contain two datasets with above and below events")
+        
     }
-    
     if(length(cell.type) != 1){
         
         warning("can only query one cell type at once")
         
     }
     
+    ## the reverse process of building index-ready PSI matrix
     
-    cells_psi <- as.data.frame(object@index$getCellTypeExpression(cell.type))
+    ## prepare above and below scaled matrix by querying index
     
-    scaled_psi <- cells_psi[which(rownames(cells_psi) %in% gene.list), ]
+ cell.type.above <- paste(object@datasets[grepl("above", object@datasets)], cell.type, sep = ".")
     
-    #print(dim(scaled_psi))
+    cell.type.below <- paste(object@datasets[grepl("below", object@datasets)], cell.type, sep = ".")
     
-    mean <- object@metadata$stats[which(rownames(object@metadata$stats) %in% gene.list), 'mean']
+    cells_psi_above <- as.data.frame(object@index$getCellTypeExpression(cell.type.above))
     
-    if(nrow(scaled_psi) == 0 ){
+    scaled_psi_above <- cells_psi_above[which(rownames(cells_psi_above) %in% gene.list), ]
+    
+    cells_psi_below <- as.data.frame(object@index$getCellTypeExpression(cell.type.below))
+    
+    scaled_psi_below <- cells_psi_below[which(rownames(cells_psi_below) %in% gene.list), ]
+    
+    # prepare tissue-mean and gene list for the raw psi matrix
+    
+    mean <- object@metadata$stats[gene.list, ]
+    
+    basis <- data.frame( 'gene_id' = gene.list, row.names = gene.list)
+    
+    # process above and below to the raw matrix
+    
+    dd <- data.frame(matrix(ncol = ncol(scaled_psi_above), nrow = length(gene.list[!(gene.list %in% rownames(scaled_psi_above))])),
+                 row.names = gene.list[!(gene.list %in% rownames(scaled_psi_above))])
+colnames(dd) <- colnames(scaled_psi_above)
+
+above <- rbind(dd, scaled_psi_above)[gene.list, ] * 0.01
+    
+    
+    dd2 <- data.frame(matrix(ncol = ncol(scaled_psi_below), nrow = length(gene.list[!(gene.list %in% rownames(scaled_psi_below))])),
+                 row.names = gene.list[!(gene.list %in% rownames(scaled_psi_below))])
+colnames(dd2) <- colnames(scaled_psi_below)
+
+below <- rbind(dd2, scaled_psi_below)[gene.list, ] * 0.01
+    
+    # merge above and below matrix element-wise
+    
+    for ( i in seq(1, nrow(below))){
+    
+    for (j in seq (1, ncol(below))){
         
-        warning(paste(cell.type, " does not have PSI quantification of the queried nodes", sep = ""))
-        return(NA)
+        if(!is.na(below[i, j]) & is.na(above[i, j])){
+            
+            above[i, j] <- -1*below[i, j]
+        }
+        
     }
     
-    if(index.type == "above"){
-        raw_psi <- scaled_psi * 0.01 + mean
+}   
+    # identify nodes that are not sufficiently different from mean hence got value 0
+    
+    
+    diff_cut <- object@metadata$diff_cut
+    
+    diff_check <- diff_cut[gene.list, grepl(cell.type, colnames(diff_cut))]
+    
+for ( i in seq(1, nrow(above))){
+    
+    for (j in seq (1, ncol(above))){
         
-    }else{
-        raw_psi <- mean - scaled_psi * 0.01
+        if((diff_check[i, j] == 1)){ # as long as diff_cut is 1, mean that the cell have PSI within cut-off range of mean value and was removed
+            
+            above[i, j] <- mean[i, 'mean'] # as an approximation, set PSI to tissue mean
+            
+        } else if ((!is.na(above[i, j])) && (above[i, j] == 0 ) && (diff_check[i, j] == 0)) {
+            
+            above[i, j] <- NA  # these cells are truely NA
+            
+        } else if ((!is.na(above[i, j])) && (above[i, j] != 0)){ # cells with a sufficiently different PSI, revert the centralization by adding mean
+            
+            above[i, j] <- above[i, j] + mean[i, 'mean']
+            
+        } 
         
     }
     
-    raw_psi[raw_psi > 1] <- 1
-    raw_psi[raw_psi < 0] <- 0
+}
     
-    # when some nodes does not present in a cell type, add NAs to return a complete dataframe
-    if(nrow(raw_psi) != length(gene.list)){
-        
-        na_nodes <- gene.list[which(!(gene.list %in% rownames(raw_psi)))]
-        #print(na_nodes)
-        raw_psi[na_nodes, ] <- NA
-    }
+   above[above > 1] <- 1
     
-    return(raw_psi)
+    return(above)
     
 }
     

@@ -4,7 +4,7 @@
 \alias{get.cell.type.raw.psi}
 \title{This function gets the raw PSI of a node in a cell type}
 \usage{
-get.cell.type.raw.psi(object, gene.list, cell.type, index.type)
+get.cell.type.raw.psi(object, gene.list, cell.type)
 }
 \arguments{
 \item{object}{the \code{SCFind} object}
@@ -12,8 +12,6 @@ get.cell.type.raw.psi(object, gene.list, cell.type, index.type)
 \item{gene.list}{several nodes that we wish to get the raw PSI}
 
 \item{cell.type}{cell type tp query, can only query one cell type at once}
-
-\item{index.type}{above or below to indicate the type of splicing index}
 }
 \value{
 a dataframe that contains raw psi value in the queried cell type of the gene.list

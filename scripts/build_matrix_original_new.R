@@ -1,7 +1,13 @@
 #!/usr/bin/env Rscript
 
+#######################################
+## scfindME build a splicing index
+## ysong 07 Mar 2022
+#######################################
+
 library(optparse)
 library(tidyverse)
+library(Matrix)
 
 option_list <- list(make_option(c("-n", "--data_name"), type = "character", default = NULL, help = "Name of dataset"), 
                     make_option(c("-p", "--pseudobulk_psi"),
@@ -69,6 +75,7 @@ colnames(diff_cut) <- colnames(matrix.scaled_diff_selected)
 matrix.scaled_diff_selected <- matrix.scaled_diff_selected %>% filter(if_any(everything(), ~ !is.na(.)))
 
 diff_cut <- diff_cut[rownames(matrix.scaled_diff_selected), ]
+diff_cut <- Matrix(diff_cut, sparse = TRUE)  
 
 matrix.above <- data.frame(row.names = rownames(matrix.scaled_diff_selected))
   # set na and below ones to zero
@@ -108,9 +115,9 @@ ni <- readRDS("/nfs/production/irene/ma/ysong/DATA/SCFIND/VASA-seq/data/node_inf
 
 node_list <- rownames(matrix.scaled_diff_selected)
 
-ni$Gene_node <- paste(ni$Gene, ni$Node, sep = "_")
+ni$node_id <- paste(ni$Gene, ni$Node, sep = "_")
 
-node_list_all <- ni[which(ni$Gene_node %in% node_list), ]
+node_list_all <- ni[which(ni$node_id %in% node_list), ]
 node_list_all$Gene_num <- gsub("\\..*$", "", node_list_all$Gene)
 
   # install.packages('XML', repos = 'http://www.omegahat.net/R') BiocManager::install('biomaRt')
@@ -127,6 +134,10 @@ node_list_all$Gene_num <- gsub("\\..*$", "", node_list_all$Gene)
 
   gene_node_all <- merge(node_list_all, gene_name, by.x = "Gene_num", by.y = "ensembl_gene_id", all.x = TRUE)
 
+  names(gene_node_all)[names(gene_node_all) == 'Gene'] <- 'Gene_id'
+  names(gene_node_all)[names(gene_node_all) == 'external_gene_name'] <- 'Gene_name'
+  names(gene_node_all)[names(gene_node_all) == 'Gene_node'] <- 'Node_id'
+  gene_node_all$Node_name <- paste(gene_node_all$Gene_name, gene_node_all$Node, sep = "_")
 
 saveRDS(matrix.scaled_diff_selected, paste(OUTPUT, "matrix_scaled_diff_selected.rds", sep = ""))
 saveRDS(matrix.above, paste(OUTPUT, "matrix_above.rds", sep = ""))

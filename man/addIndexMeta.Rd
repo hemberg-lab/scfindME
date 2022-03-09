@@ -6,20 +6,18 @@
 \alias{addIndexMeta,ANY-method}
 \title{Add necessary elements of the metadata slot of an altervnative splicing SCFind index object}
 \usage{
-addIndexMeta.classic(object, type, read.count, stats, node_list)
+addIndexMeta.classic(object, stats, node_list, diff_cut)
 
-\S4method{addIndexMeta}{ANY}(object, type, read.count, stats, node_list)
+\S4method{addIndexMeta}{ANY}(object, stats, node_list, diff_cut)
 }
 \arguments{
 \item{object}{an SCFind class object built by the method "builtAltSpliceIndex"}
 
-\item{type}{a character to indicate the type and node contents of the index}
-
-\item{read.count}{the read count matrix built by the function "buildMatrix.read_count"}
-
 \item{stats}{the statistics matrix built by the function "buildMatrix.stats"}
 
 \item{node_list}{the node information matrix built by the function "buildMatrix.node_list"}
+
+\item{diff_cut}{sparse matrix with 1 denoting the removal of node PSI due to not sufficiently deviate from tissue mean}
 }
 \value{
 an SCFind object with classic metadata components

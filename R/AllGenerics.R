@@ -24,7 +24,7 @@ setGeneric(name = "buildAltSpliceIndex",
 #'
 #' @export
 setGeneric(name = "addIndexMeta",
-           def = function(object, type, read.count, stats, node_list)
+           def = function(object, stats, node_list, diff_cut)
            {
              standardGeneric("addIndexMeta")
            })
@@ -97,10 +97,9 @@ setGeneric(name = "findMutuallyExclusive",
 #'
 #' @export
 setGeneric(name = "getRawPsi",
-          def = function(object_above, 
-                           object_below,
-                    node.list,
-                    cell.types)    
+          def = function(object, 
+                         node.list, 
+                         cell.types)    
           {
              standardGeneric("getRawPsi")
              

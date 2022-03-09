@@ -175,11 +175,10 @@ node.details <- function(object, node.list){
 
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
 
-  details <- object@metadata$node_list[which(as.character(object@metadata$node_list[["Gene_node"]])%in%node.list),]
+  details <- object@metadata$node_list[which(as.character(object@metadata$node_list[["Node_id"]])%in%node.list),]
     
-  details_ordered <- details[match(node.list, details$Gene_node),]
-    
-    
+  details_ordered <- details[match(node.list, details$Node_id),]
+
   return(details_ordered)
 
 }
@@ -202,8 +201,8 @@ setMethod("nodeDetails",
 
 gene.nodes <- function(object, gene.list, query.type){
   if(is.null(object@metadata$node_list)) stop("Missing node details in index metadata")
-  if(!query.type%in%c("Gene", "external_gene_name", "Gene_node")) stop("query.type must be \"Gene\" or \"external_gene_name\" or \"Gene_node\"")
-  node.list <- subset(object@metadata$node_list, as.character(object@metadata$node_list[[query.type]])%in%gene.list, )
+  if(!query.type%in%c("Gene_id", "Gene_name", "Node_id", "Node_name")) stop("query.type must be \"Gene_id\", \"Gene_name\", \"Node_id\" or \"Node_name\"")
+  node.list <- subset(object@metadata$node_list, as.character(object@metadata$node_list[[query.type]]) %in% gene.list, )
   if(nrow(node.list) == 0) {
       warning("No node is found in this index, please change your query")
       return(data.frame())
@@ -371,12 +370,11 @@ setMethod("findMutuallyExclusive",
 #' @param object the \code{SCFind} object
 #' @param gene.list several nodes that we wish to get the raw PSI
 #' @param cell.type cell type tp query, can only query one cell type at once
-#' @param index.type above or below to indicate the type of splicing index
 #' @return a dataframe that contains raw psi value in the queried cell type of the gene.list
 #' @importFrom rquery natural_join
 #' 
 
-get.raw.psi <- function(object_above, object_below, node.list, cell.types){
+get.raw.psi <- function(object, node.list, cell.types){
     
     
     cell_types_all <- cell.types
@@ -390,10 +388,7 @@ get.raw.psi <- function(object_above, object_below, node.list, cell.types){
     
     #print(cell_type)
     
-       raw_psi_ct <- get.cell.type.raw.psi(object_above, gene_nodes_all, cell_type, 'above')
-       
-       raw_psi_ct_below <- get.cell.type.raw.psi(object_below, gene_nodes_all, cell_type, 'below')
-       
+       raw_psi_ct <- get.cell.type.raw.psi(object, gene_nodes_all, cell_types_all)
        
        if(!all(is.na(raw_psi_ct))){
            
@@ -470,8 +465,7 @@ get.raw.psi <- function(object_above, object_below, node.list, cell.types){
 #' @rdname getRawPsi
 #' @aliases getRawPsi
 setMethod("getRawPsi",
-                    signature(object_above = 'SCFind',
-                              object_below = 'SCFind',
+                    signature(object = 'SCFind',
                     node.list = 'character',
                     cell.types = 'character'),
           definition = get.raw.psi)

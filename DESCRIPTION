@@ -21,7 +21,7 @@ Collate:
     'CoreFunctions.R'
     'CoreMethods.R'
     'Tasic_2016.R'
-    'buildMatrix_new.R'
+    'ggplot_themes.R'
     'zzz.R'
 Suggests: 
     knitr

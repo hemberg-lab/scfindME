@@ -3,14 +3,21 @@
 library(optparse)
 library(tidyverse)
 
-option_list <- list(make_option(c("-n", "--data_name"), type = "character", default = NULL, help = "Name of dataset"), 
-                    make_option(c("-p", "--pseudobulk_psi"),
-  type = "character", default = NULL, help = "Combined pseudobulk psi matrix as input, tab-deliminated"), 
-                    make_option(c("-o", "--output"), type = "character",
-  default = NULL, help = "Directory where multiple output RDS file will be written"), 
-                    make_option(c("-r", "--num_reads_min"), type = "numeric", default = 10,
-  help = "Minimum number of total reads covering node, which will be included in the output. This is for ensure meaningful psi quantification, default = 10"),
-                    make_option(c("-d", "--psi_diff_cutoff"), type = "numeric", default = 0.2, help = "Minimum PSI difference from dataset average which will lead to the node being kept in the index, default = 0.2"))
+option_list <- list(
+  make_option(c("-n", "--data_name"), type = "character", default = NULL, help = "Name of dataset"),
+  make_option(c("-p", "--pseudobulk_psi"),
+    type = "character", default = NULL, help = "Combined pseudobulk psi matrix as input, tab-deliminated"
+  ),
+  make_option(c("-o", "--output"),
+    type = "character",
+    default = NULL, help = "Directory where multiple output RDS file will be written"
+  ),
+  make_option(c("-r", "--num_reads_min"),
+    type = "numeric", default = 10,
+    help = "Minimum number of total reads covering node, which will be included in the output. This is for ensure meaningful psi quantification, default = 10"
+  ),
+  make_option(c("-d", "--psi_diff_cutoff"), type = "numeric", default = 0.2, help = "Minimum PSI difference from dataset average which will lead to the node being kept in the index, default = 0.2")
+)
 
 # parse input
 opt <- parse_args(OptionParser(option_list = option_list))
@@ -30,7 +37,6 @@ ni <- readRDS("/nfs/production/irene/ma/ysong/DATA/SCFIND/VASA-seq/data/nodes_in
 
 # build original matrix function
 buildMatrix.original <- function(file, num_reads_min) {
-
   data <- readr::read_tsv(file, col_names = TRUE, progress = show_progress())
 
   message("all values collected, generating matrix...")
@@ -174,7 +180,6 @@ buildMatrix.node_list <- function(matrix.scaled, nodes_details_data) {
   gene_node_all <- merge(node_list_all, gene_name, by.x = "Gene_num", by.y = "ensembl_gene_id", all.x = TRUE)
 
   return(gene_node_all)
-
 }
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env R
+#!/usr/bin/env Rscript
 
 library(optparse)
 library(tidyverse)
@@ -27,33 +27,32 @@ output <- opt$output
 
 
 # library(scfindME)
-devtools::load_all("~/scfindME")
+devtools::load_all("/nfs/research/irene/ysong/DATA/SCFIND/scfindME_package/scfindME")
 
 index <- loadObject(index_path)
 
+all_nodes <- scfindNodes(index)
 
-nodes <- scfindGenes(index)
-
-all_genes <- levels(factor(nodeDetails(index, node.list = nodes)$external_gene_name))
+all_genes <- levels(factor(nodeDetails(index, node.list = all_nodes)$Gene_name))
 
 all_blocks <- data.frame()
 
+
+block_num = 1
 for (gene in all_genes) {
   message(gene)
 
+  nodes <- geneNodes(index, gene, "Gene_name")
 
-  nodes <- geneNodes(index, gene, "external_gene_name")
-
-
-  tbl <- index@metadata$stats[which(rownames(index@metadata$stats) %in% nodes$Gene_node), ] %>%
-    tibble::rownames_to_column("Gene_node") %>%
-    mutate(node_num = as.numeric(gsub("^.*_", "", Gene_node))) %>%
+  tbl <- index@metadata$stats[which(rownames(index@metadata$stats) %in% nodes$Node_id), ] %>%
+    tibble::rownames_to_column("Node_id") %>%
+    mutate(node_num = as.numeric(gsub("^.*_", "", Node_id))) %>%
     arrange(node_num) %>%
     mutate(node_num_diff = ave(node_num, FUN = function(x) c(0, diff(x))))
 
-  details <- nodeDetails(index, tbl$Gene_node)
+  details <- nodeDetails(index, tbl$Node_id)
 
-  tbl <- merge(tbl, details, by = "Gene_node") %>%
+  tbl <- merge(tbl, details, by = "Node_id") %>%
     arrange(node_num) %>%
     filter(Type %in% c("CE", "RI", "AA", "AD"))
 
@@ -63,9 +62,8 @@ for (gene in all_genes) {
 
 
   if (nrow(tbl) > 2) {
+    
     i <- 1
-
-    block_num <- 1
 
     mean <- tbl[i, "mean"]
 
@@ -118,7 +116,7 @@ for (gene in all_genes) {
 
           test_comb <- new_block %>%
             dplyr::filter(block_num == block_now) %>%
-            select(Gene_node)
+            select(Node_id)
 
           # print(test_comb)
 
@@ -126,7 +124,7 @@ for (gene in all_genes) {
 
           condition <- tryCatch(
             {
-              sum(hyperQueryCellTypes(object, test_comb$Gene_node)$pval < 0.05) >= 1
+              sum(hyperQueryCellTypes(index, test_comb$Node_id)$pval < 0.05) >= 1
             },
             error = function(e) {
               skip_to_next <<- TRUE
@@ -134,16 +132,17 @@ for (gene in all_genes) {
           ) # if the block is significant in some cell types
 
           if (condition == TRUE) {
-            message("add block No.")
-            message(block_num)
-
-            sig_cell_types <- hyperQueryCellTypes(object, test_comb$Gene_node) %>% filter(pval < 0.05)
+              
+            
+            message(paste("add block No. ", block_num, sep = ""))
+              
+            sig_cell_types <- hyperQueryCellTypes(index, test_comb$Node_id) %>% filter(pval < 0.05)
 
             add_new_block <- merge(new_block, sig_cell_types, all = TRUE)
 
             all_blocks <- rbind(all_blocks, add_new_block)
 
-            message(paste("finish", block_num))
+            message(paste("finish block ", block_num, " in gene ", gene, sep = ""))
 
             block_num <- block_num + 1
 
@@ -181,4 +180,4 @@ for (gene in all_genes) {
 all_blocks <- unique(all_blocks)
 
 
-saveRDS(all_blocks, paste(output, name, "all_node_blocks.rds", sep = "_"))
+saveRDS(all_blocks, paste(output, "/", name, "_all_node_blocks.rds", sep = ""))

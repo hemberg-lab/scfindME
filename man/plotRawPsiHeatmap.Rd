@@ -3,12 +3,12 @@
 \name{plotRawPsiHeatmap}
 \alias{plotRawPsiHeatmap}
 \alias{plot.raw.psi.heatmap}
-\alias{plotRawPsiHeatmap,character,character,character-method}
+\alias{plotRawPsiHeatmap,data.frame,character,character-method}
 \title{This function plots heatmap of PSI values}
 \usage{
 \method{plot}{raw.psi.heatmap}(raw_psi, node.list, cell.types)
 
-\S4method{plotRawPsiHeatmap}{character,character,character}(raw_psi, node.list, cell.types)
+\S4method{plotRawPsiHeatmap}{data.frame,character,character}(raw_psi, node.list, cell.types)
 }
 \arguments{
 \item{node.list}{a list of nodes whose raw psi is to be plotted}

@@ -194,9 +194,9 @@ get.cell.type.raw.psi <- function(object, gene.list, cell.type) {
 
   ## prepare above and below scaled matrix by querying index
 
-  cell.type.above <- paste(object@datasets[grepl("above", object@datasets)], cell.type, sep = ".")
+  cell.type.above <- paste('above', cell.type, sep = ".")
 
-  cell.type.below <- paste(object@datasets[grepl("below", object@datasets)], cell.type, sep = ".")
+  cell.type.below <- paste('below', cell.type, sep = ".")
 
   cells_psi_above <- as.data.frame(object@index$getCellTypeExpression(cell.type.above))
 

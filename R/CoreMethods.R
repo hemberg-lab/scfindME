@@ -388,7 +388,8 @@ get.raw.psi <- function(object, node.list, cell.types) {
   for (cell_type in cell_types_all) {
     message(cell_type)
 
-    raw_psi_ct <- get.cell.type.raw.psi(new, gene_nodes_all, cell_type)
+    raw_psi_ct <- get.cell.type.raw.psi(object, gene_nodes_all, cell_type)
+      
     colnames(raw_psi_ct) <- c(paste(cell_type, seq(1, ncol(raw_psi_ct)), sep = "_"))
     raw_psi_add <- raw_psi_ct %>%
       rownames_to_column("Node_id") %>%
@@ -590,7 +591,7 @@ plot.raw.psi.heatmap <- function(raw_psi, node.list, cell.types) {
 #' @aliases plotRawPsiHeatmap
 setMethod("plotRawPsiHeatmap",
   signature(
-    raw_psi = "character",
+    raw_psi = "data.frame",
     node.list = "character",
     cell.types = "character"
   ),

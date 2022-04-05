@@ -56,10 +56,9 @@ node_types <- "node_types_all"
 
 message("start processing all genes to find MXEs")
 
+node_num <- 1
+
 for (gene in all_genes) {
-
-  # for(gene in all_genes[1:100]){
-
   nodes <- geneNodes(object, gene, "Gene_name")
 
   if (nrow(nodes) == 0) {
@@ -67,17 +66,13 @@ for (gene in all_genes) {
   }
 
   if (nrow(nodes) > 1) {
-
-    # nodes_check <- nodes[which(nodes$Type %in% c("CE", "AA", "AD","RI","AF","AL")), 'Gene_node']
     nodes_check <- nodes[which(nodes$Type %in% c("CE", "RI", "AA", "AD")), "Node_id"]
 
     if (length(nodes_check) >= 2) {
       pairs <- as.data.frame(combn(nodes_check, 2))
 
-
       for (i in seq(1, ncol(pairs))) {
         skip_to_next <- FALSE
-
         node_1 <- pairs[1, i]
         node_2 <- pairs[2, i]
 
@@ -90,14 +85,14 @@ for (gene in all_genes) {
         test_comb_2 <- c(node_2, paste("-", node_1, sep = ""))
 
         if (0.9 <= (a_1[1, "mean"] + a_2[1, "mean"]) &
-          (a_1[1, "mean"] + a_2[1, "mean"]) <= 1.2 &
-          abs(a_1[1, "SD"] - a_2[1, "SD"]) < 0.2) {
+          (a_1[1, "mean"] + a_2[1, "mean"]) <= 1.1 &
+          abs(a_1[1, "SD"] - a_2[1, "SD"]) < 0.1) {
 
           # at least in one cell typs it is specific
 
           condition <- tryCatch(
             {
-              sum(hyperQueryCellTypes(object, test_comb)$pval < 0.05) > 1 | sum(hyperQueryCellTypesAS(object, test_comb_2)$pval < 0.05) > 1
+              suppressMessages(sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) > 1 | sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) > 1)
             },
             error = function(e) {
               skip_to_next <<- TRUE
@@ -109,7 +104,10 @@ for (gene in all_genes) {
           } else if (condition == TRUE) {
             # this is a promising mutually exclusive exon
             message("find a mutually exclusive exon pair that is cell type specific")
-            d <- rbind(d, a_1, a_2)
+            add <- rbind(a_1, a_2)
+            add$node_num <- node_num
+            node_num <- node_num + 1
+            d <- rbind(d, add)
           }
         }
       }

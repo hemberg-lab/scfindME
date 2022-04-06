@@ -9,4 +9,5 @@
 inst/doc
 data/
 .rds
+scripts/*.rds
 plots/

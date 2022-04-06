@@ -564,7 +564,7 @@ plot.raw.psi.heatmap <- function(raw_psi, node.list, cell.types) {
     arrange(node_num) %>%
     mutate(Node_name = factor(Node_name)) %>%
     mutate(Cell_type = gsub("_\\d*$", "", Cell_id)) %>%
-    group_by(Cell_type) %>%
+    group_by(Cell_type, Node_id) %>%
     mutate(mean_psi = mean(raw_psi, na.rm = TRUE)) %>%
     ungroup() %>%
     ggplot(aes(x = fct_inorder(Node_name), y = Cell_type, fill = mean_psi)) +

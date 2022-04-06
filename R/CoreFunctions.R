@@ -258,8 +258,10 @@ get.cell.type.raw.psi <- function(object, gene.list, cell.type) {
       }
     }
   }
-
+ 
+    # due to imprecise retrieval of PSI there could be values slightly beyond limit
   above[above > 1] <- 1
+  above[above < 0] <- 0
 
   return(above)
 }

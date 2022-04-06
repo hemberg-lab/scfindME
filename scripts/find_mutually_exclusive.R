@@ -66,7 +66,7 @@ for (gene in all_genes) {
   }
 
   if (nrow(nodes) > 1) {
-    nodes_check <- nodes[which(nodes$Type %in% c("CE", "RI", "AA", "AD")), "Node_id"]
+    nodes_check <- nodes[which(nodes$Type %in% c("CE", "RI", "AA", "AD", "NA")), "Node_id"]
 
     if (length(nodes_check) >= 2) {
       pairs <- as.data.frame(combn(nodes_check, 2))

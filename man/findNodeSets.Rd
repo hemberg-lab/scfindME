@@ -6,9 +6,19 @@
 \alias{findNodeSets,SCFind,character,character,character-method}
 \title{This function finds coordinated node sets for a gene}
 \usage{
-gene.node.sets(object, gene.list, query.type, node.types)
+gene.node.sets(
+  object,
+  gene.list,
+  query.type,
+  node.types = c("CE", "AA", "AD", "RI", NA, "NA")
+)
 
-\S4method{findNodeSets}{SCFind,character,character,character}(object, gene.list, query.type, node.types)
+\S4method{findNodeSets}{SCFind,character,character,character}(
+  object,
+  gene.list,
+  query.type,
+  node.types = c("CE", "AA", "AD", "RI", NA, "NA")
+)
 }
 \arguments{
 \item{object}{the \code{SCFind} object}

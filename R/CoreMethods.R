@@ -224,7 +224,8 @@ setMethod("geneNodes",
 #' @param node.types types of splicing nodes to consider in the gene.list
 #' @return a dataframe that contains nodes for gene.list
 
-gene.node.sets <- function(object, gene.list, query.type, node.types) {
+gene.node.sets <- function(object, gene.list, query.type, node.types = c("CE", "AA", "AD", "RI", NA, "NA")) {
+
   nodes <- gene.nodes(object, gene.list, query.type)
   nodes.new <- nodes[which(as.character(nodes$Type) %in% node.types), ]
 
@@ -235,15 +236,15 @@ gene.node.sets <- function(object, gene.list, query.type, node.types) {
     return(NA)
   }
 
-  markers <- find.marker.genes(object, as.character(nodes$Gene_node))
+  markers <- markerNodes(object, as.character(nodes.new$Node_id))
   if (nrow(markers) == 0) stop("No gene pattern is found")
   sets <- data.frame()
 
   query <- strsplit(as.character(markers[which.max(markers$tfidf), "Query"]), ",")[[1]]
   result <- cell.types.phyper.test(object, query)
 
-  print("running hyperQueryCellTypeAS using")
-  print(query)
+  message("running hyperQueryCellType using")
+  message(query)
   print(result)
 
 
@@ -280,16 +281,14 @@ setMethod("findNodeSets",
 #'
 #' @name getCoordinatedNodes
 #' @param object the \code{SCFind} object
-#' @param gene.name external_gene_name of the interested gene
+#' @param gene.name Gene_name of the interested gene from geneNodes
 #' @return a dataframe that contains top queries
 #' @importFrom magrittr %>%
 #' @importFrom dplyr arrange slice_head filter slice_max
 #'
 get_coordinated_nodes <- function(object, gene.name) {
-  query <- markerGenes(object, geneNodes(object, gene.name,
-    query.type = "external_gene_name"
-  )$Gene_node) %>%
-    arrange(desc(Cells, tfidf)) %>%
+  query <- markerNodes(index, geneNodes(index, gene.name, query.type = "Gene_name")$Node_id) %>%
+    arrange(desc(tfidf)) %>%
     slice_head(n = 30) %>%
     filter(Cells == Mode(Cells)) %>%
     slice_max(Genes, n = 5)

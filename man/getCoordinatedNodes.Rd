@@ -13,7 +13,7 @@ get_coordinated_nodes(object, gene.name)
 \arguments{
 \item{object}{the \code{SCFind} object}
 
-\item{gene.name}{external_gene_name of the interested gene}
+\item{gene.name}{Gene_name of the interested gene from geneNodes}
 }
 \value{
 a dataframe that contains top queries

@@ -59,6 +59,7 @@ message("start processing all genes to find MXEs")
 node_num <- 1
 
 for (gene in all_genes) {
+    
   nodes <- geneNodes(object, gene, "Gene_name")
 
   if (nrow(nodes) == 0) {
@@ -66,7 +67,7 @@ for (gene in all_genes) {
   }
 
   if (nrow(nodes) > 1) {
-    nodes_check <- nodes[which(nodes$Type %in% c("CE", "RI", "AA", "AD", "NA")), "Node_id"]
+    nodes_check <- nodes[which(nodes$Type %in% c("CE", "RI", "AA", "AD", "NA", NA)), "Node_id"]
 
     if (length(nodes_check) >= 2) {
       pairs <- as.data.frame(combn(nodes_check, 2))

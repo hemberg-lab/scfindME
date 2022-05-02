@@ -2,13 +2,30 @@
 % Please edit documentation in R/AllGenerics.R, R/CoreMethods.R
 \name{findSimilarNodes}
 \alias{findSimilarNodes}
+\alias{similar.nodes}
 \alias{findSimilarNodes,SCFind,character-method}
 \title{Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query}
 \usage{
-findSimilarNodes(object, gene.list, datasets, top.k = 5)
+findSimilarNodes(object, node.list, datasets, top.k = 5)
 
-\S4method{findSimilarNodes}{SCFind,character}(object, gene.list, datasets, top.k = 5)
+similar.nodes(object, node.list, datasets, top.k = 5)
+
+\S4method{findSimilarNodes}{SCFind,character}(object, node.list, datasets, top.k = 5)
+}
+\arguments{
+\item{object}{the \code{SCFind} object}
+
+\item{node.list}{genes to be searched in the gene.index}
+
+\item{datasets}{the datasets that will be considered}
+
+\item{top.k}{how many genes to retrieve}
+}
+\value{
+the list of genes and their similarities presented in Jaccard indices
 }
 \description{
+Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query
+
 Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query
 }

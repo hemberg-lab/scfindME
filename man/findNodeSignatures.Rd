@@ -2,10 +2,19 @@
 % Please edit documentation in R/AllGenerics.R, R/CoreMethods.R
 \name{findNodeSignatures}
 \alias{findNodeSignatures}
+\alias{node.signatures}
 \alias{findNodeSignatures,SCFind-method}
 \title{Find the signature genes for a cell-type}
 \usage{
 findNodeSignatures(
+  object,
+  cell.types,
+  max.genes = 1000,
+  min.cells = 10,
+  max.pval = 0
+)
+
+node.signatures(
   object,
   cell.types,
   max.genes = 1000,
@@ -21,6 +30,22 @@ findNodeSignatures(
   max.pval = 0
 )
 }
+\arguments{
+\item{object}{the \code{SCFind} object}
+
+\item{cell.types}{a list of cell types for the list to evaluated}
+
+\item{max.genes}{threshold of number of genes to be considered for each cell type}
+
+\item{min.cells}{threshold of cell hit of a tissue}
+
+\item{max.pval}{threshold of p-value}
+}
+\value{
+the list of gene signatures in a query of cell types
+}
 \description{
+Find the signature genes for a cell-type
+
 Find the signature genes for a cell-type
 }

@@ -88,15 +88,7 @@ setGeneric(
   }
 )
 
-#'
-#' @export
-setGeneric(
-  name = "findMutuallyExclusive",
-  def = function(object,
-                 node.types) {
-    standardGeneric("findMutuallyExclusive")
-  }
-)
+
 
 #'
 #' @export
@@ -140,12 +132,6 @@ setGeneric(
 #' @export
 setGeneric(name = "mergeDataset", def = function(object, new.object) {
   standardGeneric("mergeDataset")
-})
-
-
-#' @export
-setGeneric(name = "mergeSCE", def = function(object, sce, dataset.name) {
-  standardGeneric("mergeSCE")
 })
 
 
@@ -260,6 +246,6 @@ setGeneric(name = "findNodeSignatures", function(object,
 #' Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query
 #'
 #' @export
-setGeneric(name = "findSimilarNodes", function(object, gene.list, datasets, top.k = 5) {
+setGeneric(name = "findSimilarNodes", function(object, node.list, datasets, top.k = 5) {
   standardGeneric("findSimilarNodes")
 })

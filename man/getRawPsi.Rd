@@ -13,9 +13,9 @@ get.raw.psi(object, node.list, cell.types)
 \arguments{
 \item{object}{the \code{SCFind} object}
 
-\item{gene.list}{several nodes that we wish to get the raw PSI}
+\item{node.list}{several nodes that we wish to get the raw PSI}
 
-\item{cell.type}{cell type tp query, can only query one cell type at once}
+\item{cell.types}{cell type tp query, can only query one cell type at once}
 }
 \value{
 a dataframe that contains raw psi value in the queried cell type of the gene.list

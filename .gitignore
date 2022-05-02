@@ -1,4 +1,4 @@
-.tsv
+scripts/*.tsv
 .Rproj.user
 .Rhistory
 .RData

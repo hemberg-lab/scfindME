@@ -11,13 +11,11 @@
 \S4method{plotRawPsiHeatmap}{data.frame,character,character}(raw_psi, node.list, cell.types)
 }
 \arguments{
+\item{raw_psi}{the raw_psi matrix from getRawPsi}
+
 \item{node.list}{a list of nodes whose raw psi is to be plotted}
 
 \item{cell.types}{a list of cell types whose raw psi is to be plotted}
-
-\item{object}{the \code{SCFind} object}
-
-\item{index.type}{above or below as the type of the input index}
 }
 \value{
 a heatmap ggplot object

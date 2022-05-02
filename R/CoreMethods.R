@@ -307,70 +307,14 @@ setMethod("getCoordinatedNodes",
   definition = get_coordinated_nodes
 )
 
-#' This function finds coordinated node sets for a gene
-#'
-#' @name findMutuallyExclusive
-#' @param object the \code{SCFind} object
-#' @param node.types the types of nodes to find mutually exclisive events in
-#' @return a dataframe that contains potential mutually exclusive nodes in the index
-#' @importFrom magrittr %>%
-#' @importFrom dplyr filter
-#'
-#'
-find.mutually.exclusive <- function(object, node.types) {
-  stats <- object@metadata$stats
-  stats$node_id <- rownames(stats)
-
-
-  node.list <- object@metadata$node_list
-  a <- merge(stats, node.list,
-    by.x = "node_id",
-    by.y = "Gene_node",
-    all.x = FALSE,
-    all.y = FALSE
-  ) %>%
-    unique() %>%
-    filter(Type %in% node.types)
-
-  b <- data.frame(row.names = a$node_id)
-  d <- data.frame(row.names = a$node_id)
-
-  for (i in seq(1, nrow(a) - 1)) {
-    if (0.95 <= (a[i, "mean"] + a[i + 1, "mean"]) &
-      (a[i, "mean"] + a[i + 1, "mean"]) <= 1.05 &
-      abs(a[i, "SD"] - a[i + 1, "SD"]) < 0.05 &
-      as.numeric(a[i, "Node"]) + 1 == as.numeric(a[i + 1, "Node"])) {
-      candidate <- c(a[i, "node_id"], a[i + 1, "node_id"])
-
-      if (all(candidate %in% scfindNodes(object))) {
-        if (sum(hyperQueryCellTypesAS(object, candidate)$pval < 0.1) == 0) {
-          d <- rbind(d, a[i, ], a[i + 1, ])
-        }
-      }
-    }
-  }
-  d <- d %>% unique()
-
-  return(d)
-}
-
-#' @rdname findMutuallyExclusive
-#' @aliases findMutuallyExclusive
-setMethod("findMutuallyExclusive",
-  signature(
-    object = "SCFind",
-    node.types = "character"
-  ),
-  definition = find.mutually.exclusive
-)
 
 
 #' This function gets the raw PSI of a node in a cell type
 #'
 #' @name getRawPsi
 #' @param object the \code{SCFind} object
-#' @param gene.list several nodes that we wish to get the raw PSI
-#' @param cell.type cell type tp query, can only query one cell type at once
+#' @param node.list several nodes that we wish to get the raw PSI
+#' @param cell.types cell type tp query, can only query one cell type at once
 #' @return a dataframe that contains raw psi value in the queried cell type of the gene.list
 #' @importFrom magrittr %>%
 #' @importFrom tidyr pivot_longer
@@ -546,10 +490,9 @@ setMethod("plotRawPsiCorr",
 #' This function plots heatmap of PSI values
 #'
 #' @name plotRawPsiHeatmap
-#' @param object the \code{SCFind} object
+#' @param raw_psi the raw_psi matrix from getRawPsi
 #' @param node.list a list of nodes whose raw psi is to be plotted
 #' @param cell.types a list of cell types whose raw psi is to be plotted
-#' @param index.type above or below as the type of the input index
 #' @return a heatmap ggplot object
 #' @importFrom magrittr %>%
 #' @importFrom dplyr arrange mutate
@@ -704,32 +647,6 @@ setMethod(
   merge.dataset.from.object
 )
 
-#' Merges a SingleCellExperiment object into the SCFind index
-#'
-#' It creates an \code{SCFind} for the individual assay and then invokes
-#' the \code{mergeDataset} method obeying the same semantic rules.
-#'
-#' @param object the root scfind object
-#' @param sce the \code{SingleCellExperiment} object to be merged
-#' @param dataset.name a dataset name for the assay
-#' @name mergeSCE
-#' @return the new object with the sce object merged
-merge.dataset.from.sce <- function(object, sce, dataset.name) {
-  object.to.merge <- buildCellTypeIndex(sce, dataset.name)
-  return(mergeDataset(object, object.to.merge))
-}
-#' @rdname mergeSCE
-#' @importFrom SingleCellExperiment SingleCellExperiment
-#' @aliases mergeSCE
-setMethod(
-  "mergeSCE",
-  signature(
-    object = "SCFind",
-    sce = "SingleCellExperiment",
-    dataset.name = "character"
-  ),
-  merge.dataset.from.sce
-)
 
 
 #' Query Optimization Function for SCFind objects.
@@ -1115,7 +1032,7 @@ setMethod(
 #' @param max.genes threshold of number of genes to be considered for each cell type
 #'
 #' @importFrom utils txtProgressBar
-#' @name findHouseKeepingGenes
+#' @name findHouseKeepingNodes
 #' @return the list of gene that ubiquitously expressed in a query of cell types
 #'
 house.keeping.nodes <- function(object, cell.types, min.recall = .5, max.genes = 1000) {
@@ -1158,7 +1075,7 @@ setMethod(
 #'
 #' @importFrom utils setTxtProgressBar
 #'
-#' @name findGeneSignatures
+#' @name findNodeSignatures
 #' @return the list of gene signatures in a query of cell types
 #'
 node.signatures <- function(object, cell.types, max.genes = 1000, min.cells = 10, max.pval = 0) {
@@ -1188,22 +1105,22 @@ setMethod(
 #'  Look at all other genes and rank them based on the similarity of their expression pattern to the pattern defined by the gene query
 #'
 #' @param object the \code{SCFind} object
-#' @param gene.list genes to be searched in the gene.index
+#' @param node.list genes to be searched in the gene.index
 #' @param datasets the datasets that will be considered
 #' @param top.k how many genes to retrieve
 #'
 #' @importFrom utils setTxtProgressBar
-#' @name findSimilarGenes
+#' @name findSimilarNodes
 #' @return the list of genes and their similarities presented in Jaccard indices
 #'
-similar.nodes <- function(object, gene.list, datasets, top.k = 5) {
+similar.nodes <- function(object, node.list, datasets, top.k = 5) {
   message("Searching for genes with similar pattern...")
   datasets <- if (missing(datasets)) object@datasets else select.datasets(object, datasets)
-  gene.list <- caseCorrect(object, gene.list)
-  e <- object@index$findCellTypes(gene.list, datasets) # the cells expressing the genes in gene.list
+  node.list <- caseCorrect(object, node.list)
+  e <- object@index$findCellTypes(node.list, datasets) # the cells expressing the genes in node.list
   n.e <- length(unlist(e))
   if (n.e > 0) {
-    gene.names <- setdiff(object@index$genes(), gene.list)
+    gene.names <- setdiff(object@index$genes(), node.list)
     similarities <- rep(0, length(gene.names))
     ns <- rep(0, length(gene.names))
     ms <- rep(0, length(gene.names))
@@ -1227,7 +1144,7 @@ similar.nodes <- function(object, gene.list, datasets, top.k = 5) {
     res <- data.frame("gene" = gene.names[inds], "Jaccard" = similarities[inds], "overlap" = ms[inds], "n" = ns[inds])
     return(res)
   } else {
-    message(paste("Cannot find cell expressing", toString(gene.list), "in the index."))
+    message(paste("Cannot find cell expressing", toString(node.list), "in the index."))
     return(c())
   }
 }
@@ -1239,7 +1156,7 @@ setMethod(
   "findSimilarNodes",
   signature(
     object = "SCFind",
-    gene.list = "character"
+    node.list = "character"
   ),
   similar.nodes
 )

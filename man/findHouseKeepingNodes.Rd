@@ -2,14 +2,31 @@
 % Please edit documentation in R/AllGenerics.R, R/CoreMethods.R
 \name{findHouseKeepingNodes}
 \alias{findHouseKeepingNodes}
+\alias{house.keeping.nodes}
 \alias{findHouseKeepingNodes,SCFind,character-method}
 \alias{findHouseKeepinNodes}
 \title{Find the set of genes that are ubiquitously expressed in a query of cell types}
 \usage{
 findHouseKeepingNodes(object, cell.types, min.recall = 0.5, max.genes = 1000)
 
+house.keeping.nodes(object, cell.types, min.recall = 0.5, max.genes = 1000)
+
 \S4method{findHouseKeepingNodes}{SCFind,character}(object, cell.types, min.recall = 0.5, max.genes = 1000)
 }
+\arguments{
+\item{object}{the \code{SCFind} object}
+
+\item{cell.types}{a list of cell types for the list to evaluated}
+
+\item{min.recall}{threshold of minimun recall value}
+
+\item{max.genes}{threshold of number of genes to be considered for each cell type}
+}
+\value{
+the list of gene that ubiquitously expressed in a query of cell types
+}
 \description{
+Find the set of genes that are ubiquitously expressed in a query of cell types
+
 Find the set of genes that are ubiquitously expressed in a query of cell types
 }

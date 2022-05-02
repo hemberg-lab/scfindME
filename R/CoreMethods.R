@@ -241,16 +241,16 @@ gene.node.sets <- function(object, gene.list, query.type, node.types = c("CE", "
   sets <- data.frame()
 
   query <- strsplit(as.character(markers[which.max(markers$tfidf), "Query"]), ",")[[1]]
-  result <- cell.types.phyper.test(object, query)
+  result <- cell.types.phyper.test.AS(object, query)
 
   message("running hyperQueryCellType using")
-  message(query)
+  print(query)
   print(result)
 
 
   for (j in seq(1, nrow(result))) {
     if (result$pval[[j]] <= 0.05) {
-      print("find a cell type specific node set\n")
+      message("find a cell type specific node set \n")
       print(query)
       sets <- rbind(sets, result[j, ])
     }

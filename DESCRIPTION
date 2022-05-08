@@ -3,9 +3,9 @@ Type: Package
 Title: This is a package that adaps "scfind", a search tool for single cell RNA-seq data by gene lists, to alternative splicing analysis
 Version: 0.1.0
 Author: Yuyao Song, authors of scfind and authors of MicroExonator
-Maintainer: Yuyao Song <ys6@sanger.ac.uk> <song-yy17@mails.tsinghua.edu.cn>
+Maintainer: Yuyao Song <ys585@cam.ac.uk>
 Description: The emergence of large single cell RNA-seq(scRNA-seq) datasets facilitates biological discoveries at single-cell resolution. For single cell atlas to be useful to users from all disciplines, it should be organized in an accessible way. 'scfind' builds an index for scRNA-seq datasets and allows fast inqueries involving cell types and feature lists. scfindME is built on top of scfind and it adaps scfind to alternative splicing analysis, in addition to gene expression. Quantification of single cell alternative splicing events are performed by Whippet integreted in the workflow MicroExonator.
-License: GPL-3
+License: MIT
 Encoding: UTF-8
 LazyData: true
 Imports:

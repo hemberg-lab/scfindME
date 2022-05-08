@@ -701,6 +701,13 @@ cell.type.marker <- function(object, cell.types, background.cell.types, top.k, s
     sort.field <- "f1"
   }
   all.cell.types <- all.cell.types[order(all.cell.types[[sort.field]], decreasing = T)[1:top.k], ]
+  
+    if(!is.null(object@metadata$node_list)){
+        
+        all.cell.types <- merge(all.cell.types, object@metadata$node_list, by.x = 'nodes', by.y = 'Node_id', all.x = TRUE, all.y.= FALSE)
+        
+    }
+
   return(all.cell.types)
 }
 

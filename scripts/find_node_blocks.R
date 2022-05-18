@@ -65,12 +65,12 @@ for (gene in all_genes) {
   new_block <- data.frame()
   block_num <- 1
 
-  if (nrow(tbl) > 2) {
+ if (nrow(tbl) > 2) {
     
       # first node in block
     i <- 1
 
-    mean <- tbl[i, "mean"]
+    avg <- tbl[i, "mean"]
 
     SD <- tbl[i, "SD"]
 
@@ -78,19 +78,18 @@ for (gene in all_genes) {
 
     while (i < nrow(tbl)) {
         
-      if (abs(tbl[i + 1, "mean"] - mean) < 0.2 &
+      if (abs(tbl[i + 1, "mean"] - avg) < 0.1 &
         abs(tbl[i + 1, "SD"] - SD < 0.1)) {
-        
-        message(i)
-          
+                  
         add_block <- tbl[i + 1, ]
 
         add_block$block_num <- block_num
         
-        mean <- mean(mean, add_block[, "mean"])
-    
+
+        avg = (avg+add_block$mean)*0.5
           
-        SD <- mean(SD, add_block[, "SD"])
+
+        SD = (SD+add_block$SD)*0.5
 
 
         if (nrow(new_block) == 0) {
@@ -112,10 +111,9 @@ for (gene in all_genes) {
         if (nrow(new_block) == 0) {
             
           i <- i + 1
-          mean <- tbl[i, "mean"]
+          avg <- tbl[i, "mean"]
           SD <- tbl[i, "SD"]
 
-            
             
         } else if (nrow(new_block) > 0) {
 
@@ -130,13 +128,13 @@ for (gene in all_genes) {
             dplyr::filter(block_num == block_now) %>%
             select(Node_id)
 
-          # print(test_comb)
+          print(test_comb)
 
           skip_to_next <- FALSE
 
           condition <- tryCatch(
             {
-              sum(hyperQueryCellTypes(index, test_comb$Node_id)$pval < 0.05) >= 1
+              sum(hyperQueryCellTypes(index, test_comb$Node_id)$pval < 0.1) >= 1
             },
             error = function(e) {
               skip_to_next <<- TRUE
@@ -159,12 +157,14 @@ for (gene in all_genes) {
             block_num <- block_num + 1
 
             new_block <- data.frame()
-
-            mean <- tbl[i + 1, "mean"]
-
-            SD <- tbl[i + 1, "SD"]
-
+            
             i <- i + 1
+
+            avg <- tbl[i, "mean"]
+
+            SD <- tbl[i, "SD"]
+
+            
           } else {
 
             # message("skip block")
@@ -172,7 +172,7 @@ for (gene in all_genes) {
 
             i <- i + 1
 
-            mean <- tbl[i, "mean"]
+            avg <- tbl[i, "mean"]
 
             SD <- tbl[i, "SD"]
 

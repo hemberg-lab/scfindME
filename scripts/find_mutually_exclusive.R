@@ -12,6 +12,10 @@ option_list <- list(
     type = "character", default = NULL,
     help = "Path to a complete scfindME index"
   ),
+    make_option(c("-t", "--node_types"),
+    type = "character", default = NULL,
+    help = "Node types to consider when detecting blocks, split by comma"
+  ),
   make_option(c("-o", "--output"),
     type = "character", default = NULL,
     help = "Directory where discovered node blocks in all genes will be written as an .rds file"
@@ -24,7 +28,7 @@ opt <- parse_args(OptionParser(option_list = option_list))
 name <- opt$data_name
 index_path <- opt$index
 output <- opt$output
-
+types <- opt$node_types
 
 # library(scfindME)
 devtools::load_all("/nfs/research/irene/ysong/DATA/SCFIND/scfindME_package/scfindME")
@@ -41,6 +45,7 @@ node.list <- object@metadata$node_list
 
 all_genes <- as.character(levels(factor(node.list$Gene_name)))
 
+types <- str_split(types, ",") %>% flatten_chr()
 
 a <- merge(stats, node.list,
   by.x = "node_id",
@@ -59,7 +64,6 @@ message("start processing all genes to find MXEs")
 node_num <- 1
 
 for (gene in all_genes) {
-    
   nodes <- geneNodes(object, gene, "Gene_name")
 
   if (nrow(nodes) == 0) {
@@ -67,7 +71,7 @@ for (gene in all_genes) {
   }
 
   if (nrow(nodes) > 1) {
-    nodes_check <- nodes[which(nodes$Type %in% c("CE", "RI", "AA", "AD", "NA", NA)), "Node_id"]
+    nodes_check <- nodes[which(nodes$Type %in% types), "Node_id"]
 
     if (length(nodes_check) >= 2) {
       pairs <- as.data.frame(combn(nodes_check, 2))
@@ -105,7 +109,9 @@ for (gene in all_genes) {
           } else if (condition == TRUE) {
             # this is a promising mutually exclusive exon
             message("find a mutually exclusive exon pair that is cell type specific")
+            sig_cell_types = suppressMessages(rbind(hyperQueryCellTypes(object, test_comb, datasets = "above")  %>% filter(pval < 0.05),  hyperQueryCellTypes(object, test_comb_2, datasets = "above")  %>% filter(pval < 0.05)))
             add <- rbind(a_1, a_2)
+            add <- merge(add, sig_cell_types)
             add$node_num <- node_num
             node_num <- node_num + 1
             d <- rbind(d, add)
@@ -115,7 +121,6 @@ for (gene in all_genes) {
     }
   }
 }
-
 
 
 saveRDS(d, paste(output, "/", name, "_mutually_exclusive_exons.rds", sep = ""))

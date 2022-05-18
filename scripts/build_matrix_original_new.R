@@ -76,6 +76,8 @@ for (cell in seq(1, ncol(matrix.scaled_diff))) {
   diff_cut[, cell] <- tvd
 }
 
+# 1 in diff_cut means dropped calls
+
 rownames(diff_cut) <- rownames(matrix.scaled_diff_selected)
 colnames(diff_cut) <- colnames(matrix.scaled_diff_selected)
 

@@ -22,7 +22,8 @@ option_list <- list(
     type = "numeric", default = 10,
     help = "Minimum number of total reads covering node, which will be included in the output. This is for ensure meaningful psi quantification, default = 10"
   ),
-  make_option(c("-d", "--psi_diff_cutoff"), type = "numeric", default = 0.2, help = "Minimum PSI difference from dataset average which will lead to the node being kept in the index, default = 0.2")
+  make_option(c("-d", "--psi_diff_cutoff"), type = "numeric", default = 0.2, help = "Minimum PSI difference from dataset average which will lead to the node being kept in the index, default = 0.2"),
+  make_option(c("--species"), type = 'character', default = NULL, help = 'ensembl name of species to get gene annotations') 
 )
 
 # parse input
@@ -33,6 +34,7 @@ INPUT <- opt$pseudobulk_psi
 OUTPUT <- opt$output
 NUM_READS_MIN <- opt$num_reads_min
 PSI_DIFF_CUTOFF <- opt$psi_diff_cutoff
+species = opt$species
 
 ######################## Functions build various inputs for scfindME
 
@@ -120,20 +122,20 @@ stats <- mean[, c("mean", "SD")]
 stats <- stats[which(rownames(stats) %in% rownames(matrix.scaled_diff_selected)), ]
 
 
-ni <- readRDS("/nfs/production/irene/ma/ysong/DATA/SCFIND/VASA-seq/data/node_info_vasa-seq.rds")
+ni <- read_tsv("/nfs/research/irene/ysong/DATA/SCFIND/original_data/human_data/human_node_info.tsv")
 
 node_list <- rownames(matrix.scaled_diff_selected)
 
-ni$node_id <- paste(ni$Gene, ni$Node, sep = "_")
+ni$Node_id <- paste(ni$Gene, ni$Node, sep = "_")
 
-node_list_all <- ni[which(ni$node_id %in% node_list), ]
+node_list_all <- ni[which(ni$Node_id %in% node_list), ]
 node_list_all$Gene_num <- gsub("\\..*$", "", node_list_all$Gene)
 
 # install.packages('XML', repos = 'http://www.omegahat.net/R') BiocManager::install('biomaRt')
 library("biomaRt")
 # listMarts()
 ensembl <- useMart("ensembl")
-ensembl <- useDataset("mmusculus_gene_ensembl", mart = ensembl)
+ensembl <- useDataset(paste0(species, "_gene_ensembl"), mart = ensembl)
 
 # takes a few minuites to match gene to name
 gene_name <- getBM(attributes = c("ensembl_gene_id", "external_gene_name"), filters = "ensembl_gene_id", values = node_list_all$Gene_num, mart = ensembl)
@@ -148,9 +150,9 @@ names(gene_node_all)[names(gene_node_all) == "external_gene_name"] <- "Gene_name
 names(gene_node_all)[names(gene_node_all) == "Gene_node"] <- "Node_id"
 gene_node_all$Node_name <- paste(gene_node_all$Gene_name, gene_node_all$Node, sep = "_")
 
-saveRDS(matrix.scaled_diff_selected, paste(OUTPUT, "matrix_scaled_diff_selected.rds", sep = ""))
-saveRDS(matrix.above, paste(OUTPUT, "matrix_above.rds", sep = ""))
-saveRDS(matrix.below, paste(OUTPUT, "matrix_below.rds", sep = ""))
-saveRDS(diff_cut, paste(OUTPUT, "diff_cut.rds", sep = ""))
-saveRDS(stats, paste(OUTPUT, "stats.rds", sep = ""))
-saveRDS(gene_node_all, paste(OUTPUT, "gene_node_all.rds", sep = ""))
+saveRDS(matrix.scaled_diff_selected, paste(OUTPUT, "_matrix_scaled_diff_selected.rds", sep = ""))
+saveRDS(matrix.above, paste(OUTPUT, "_matrix_above.rds", sep = ""))
+saveRDS(matrix.below, paste(OUTPUT, "_matrix_below.rds", sep = ""))
+saveRDS(diff_cut, paste(OUTPUT, "_diff_cut.rds", sep = ""))
+saveRDS(stats, paste(OUTPUT, "_stats.rds", sep = ""))
+saveRDS(gene_node_all, paste(OUTPUT, "_gene_node_all.rds", sep = ""))

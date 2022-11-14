@@ -12,7 +12,7 @@ option_list <- list(
     type = "character", default = NULL,
     help = "Path to a complete scfindME index"
   ),
-    make_option(c("-t", "--node_types"),
+    make_option(c("-t", "--node_types", default='CE,AD,AA,NA,RI'),
     type = "character", default = NULL,
     help = "Node types to consider when detecting blocks, split by comma"
   ),
@@ -65,6 +65,7 @@ node_num <- 1
 
 for (gene in all_genes) {
   nodes <- geneNodes(object, gene, "Gene_name")
+  nodes$Type = as.character(nodes$Type)
 
   if (nrow(nodes) == 0) {
     break
@@ -109,7 +110,21 @@ for (gene in all_genes) {
           } else if (condition == TRUE) {
             # this is a promising mutually exclusive exon
             message("find a mutually exclusive exon pair that is cell type specific")
-            sig_cell_types = suppressMessages(rbind(hyperQueryCellTypes(object, test_comb, datasets = "above")  %>% filter(pval < 0.05),  hyperQueryCellTypes(object, test_comb_2, datasets = "above")  %>% filter(pval < 0.05)))
+            
+              if (sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) > 1 & sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) > 1) {
+                  
+                  sig_cell_types = suppressMessages(rbind(hyperQueryCellTypes(object, test_comb, datasets = "above")  %>% filter(pval < 0.05),  hyperQueryCellTypes(object, test_comb_2, datasets = "above")  %>% filter(pval < 0.05)))
+                  
+              } else if (sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) > 1){
+                  
+                  sig_cell_types = suppressMessages(hyperQueryCellTypes(object, test_comb, datasets = "above")  %>% filter(pval < 0.05))
+                  
+              } else if (sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) > 1){
+                  
+                  sig_cell_types = suppressMessages(hyperQueryCellTypes(object, test_comb_2, datasets = "above")  %>% filter(pval < 0.05))
+                  
+              }
+           
             add <- rbind(a_1, a_2)
             add <- merge(add, sig_cell_types)
             add$node_num <- node_num

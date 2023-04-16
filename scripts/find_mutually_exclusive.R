@@ -98,7 +98,7 @@ for (gene in all_genes) {
 
           condition <- tryCatch(
             {
-              suppressMessages(sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) > 1 | sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) > 1)
+              suppressMessages(sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) >= 1 | sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) >= 1)
             },
             error = function(e) {
               skip_to_next <<- TRUE
@@ -111,15 +111,15 @@ for (gene in all_genes) {
             # this is a promising mutually exclusive exon
             message("find a mutually exclusive exon pair that is cell type specific")
             
-              if (sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) > 1 & sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) > 1) {
+              if (sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) >= 1 & sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) >= 1) {
                   
                   sig_cell_types = suppressMessages(rbind(hyperQueryCellTypes(object, test_comb, datasets = "above")  %>% filter(pval < 0.05),  hyperQueryCellTypes(object, test_comb_2, datasets = "above")  %>% filter(pval < 0.05)))
                   
-              } else if (sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) > 1){
+              } else if (sum(hyperQueryCellTypes(object, test_comb, datasets = "above")$pval < 0.05) >= 1){
                   
                   sig_cell_types = suppressMessages(hyperQueryCellTypes(object, test_comb, datasets = "above")  %>% filter(pval < 0.05))
                   
-              } else if (sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) > 1){
+              } else if (sum(hyperQueryCellTypes(object, test_comb_2, datasets = "above")$pval < 0.05) >= 1){
                   
                   sig_cell_types = suppressMessages(hyperQueryCellTypes(object, test_comb_2, datasets = "above")  %>% filter(pval < 0.05))
                   

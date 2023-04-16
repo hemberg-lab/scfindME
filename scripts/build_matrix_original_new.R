@@ -5,14 +5,17 @@
 ## ysong 07 Mar 2022
 #######################################
 
-library(optparse)
-library(tidyverse)
-library(Matrix)
+suppressMessages(library(optparse))
+suppressMessages(library(tidyverse))
+suppressMessages(library(Matrix))
 
 option_list <- list(
   make_option(c("-n", "--data_name"), type = "character", default = NULL, help = "Name of dataset"),
   make_option(c("-p", "--pseudobulk_psi"),
     type = "character", default = NULL, help = "Combined pseudobulk psi matrix as input, tab-deliminated"
+  ),
+  make_option(c("-i", "--node_info"),
+    type = "character", default = NULL, help = "Node information input from Whippet, tab-deliminated"
   ),
   make_option(c("-o", "--output"),
     type = "character",
@@ -23,7 +26,8 @@ option_list <- list(
     help = "Minimum number of total reads covering node, which will be included in the output. This is for ensure meaningful psi quantification, default = 10"
   ),
   make_option(c("-d", "--psi_diff_cutoff"), type = "numeric", default = 0.2, help = "Minimum PSI difference from dataset average which will lead to the node being kept in the index, default = 0.2"),
-  make_option(c("--species"), type = 'character', default = NULL, help = 'ensembl name of species to get gene annotations') 
+  make_option(c("-s", "--species"), 
+              type = 'character', default = NULL, help = 'ENSEMBL name of species to get gene annotations') 
 )
 
 # parse input
@@ -31,6 +35,7 @@ opt <- parse_args(OptionParser(option_list = option_list))
 
 NAME <- opt$data_name
 INPUT <- opt$pseudobulk_psi
+NODE <- opt$node_info
 OUTPUT <- opt$output
 NUM_READS_MIN <- opt$num_reads_min
 PSI_DIFF_CUTOFF <- opt$psi_diff_cutoff
@@ -40,9 +45,11 @@ species = opt$species
 
 # build original matrix function
 
+message("Start building inputs for scASfind index")
 
 data <- readr::read_tsv(INPUT, col_names = TRUE, progress = show_progress())
-message("all values collected, generating matrix...")
+
+message("Read PSI input, generating matrces...")
 
 matrix.original <- data %>%
   tidyr::unite("Gene_node", Gene, Node, sep = "_") %>%
@@ -56,7 +63,8 @@ matrix.original <- data %>%
   dplyr::group_by(Gene_node) %>%
   tidyr::pivot_wider(names_from = Sample, values_from = Psi)
 
-message("original matrix constructed, ready to be scaled")
+message("Matrices constructed, scailing")
+
 df <- data.frame(matrix.original, row.names = matrix.original$Gene_node)
 dm <- as.matrix(df[, -1])
 mean <- rowMeans(dm, na.rm = TRUE)
@@ -121,11 +129,11 @@ stats <- mean[, c("mean", "SD")]
 
 stats <- stats[which(rownames(stats) %in% rownames(matrix.scaled_diff_selected)), ]
 
-
-ni <- read_tsv("/nfs/research/irene/ysong/DATA/SCFIND/original_data/human_data/human_node_info.tsv")
-
 node_list <- rownames(matrix.scaled_diff_selected)
 
+message("Read node information...")
+
+ni <- readr::read_tsv(NODE)
 ni$Node_id <- paste(ni$Gene, ni$Node, sep = "_")
 
 node_list_all <- ni[which(ni$Node_id %in% node_list), ]
@@ -149,6 +157,8 @@ names(gene_node_all)[names(gene_node_all) == "Gene"] <- "Gene_id"
 names(gene_node_all)[names(gene_node_all) == "external_gene_name"] <- "Gene_name"
 names(gene_node_all)[names(gene_node_all) == "Gene_node"] <- "Node_id"
 gene_node_all$Node_name <- paste(gene_node_all$Gene_name, gene_node_all$Node, sep = "_")
+
+message("Save results...")
 
 saveRDS(matrix.scaled_diff_selected, paste(OUTPUT, "_matrix_scaled_diff_selected.rds", sep = ""))
 saveRDS(matrix.above, paste(OUTPUT, "_matrix_above.rds", sep = ""))
